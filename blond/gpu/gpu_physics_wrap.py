@@ -5,19 +5,17 @@ BLonD physics wrapper functions
 @date 20.10.2017
 '''
 
-# import ctypes as ct
 import numpy as np
-# from setup_cpp import libblondphysics as __lib
-from .. import libblond as __lib
-# import pycuda.cumath as cm
-# import traceback
+import ctypes as ct
 from ..gpu.cucache import get_gpuarray
-from ..gpu.gpu_butils_wrap import bm_phase_exp_times_scalar, bm_phase_mul_add, bm_sin_cos, d_multiply, d_multscalar
-from pycuda import gpuarray
-from ..utils.butils_wrap import trapz
 from ..utils import bmath as bm
 from ..gpu import block_size, grid_size
-from .gpu_butils_wrap import set_zero_int
+from .gpu_butils_wrap import set_zero_int, d_multscalar
+# from .. import libblond as __lib
+# import pycuda.cumath as cm
+# import traceback
+# from pycuda import gpuarray
+# from ..utils.butils_wrap import trapz
 # drv.init()
 
 my_gpu = bm.gpuDev()
@@ -49,11 +47,13 @@ def gpu_rf_volt_comp(dev_voltage, dev_omega_rf, dev_phi_rf, dev_bin_centers, dev
     assert dev_bin_centers.dtype == bm.precision.real_t
     assert dev_rf_voltage.dtype == bm.precision.real_t
 
-    print("bin_centers mean, std", np.mean(dev_bin_centers.get()), np.std(dev_bin_centers.get()))
+    # print("bin_centers mean, std", np.mean(dev_bin_centers.get()), np.std(dev_bin_centers.get()))
     rvc(dev_voltage, dev_omega_rf, dev_phi_rf, dev_bin_centers,
         np.int32(dev_voltage.size), np.int32(
             dev_bin_centers.size), np.int32(f_rf), dev_rf_voltage,
-        block=block_size, grid=grid_size, time_kernel=True)
+        block=block_size, grid=grid_size, 
+        shared=3*dev_voltage.size*ct.sizeof(bm.precision.real_t),
+        time_kernel=True)
 
 
 def gpu_kick(dev_voltage, dev_omega_rf, dev_phi_rf, charge, n_rf, acceleration_kick, beam):

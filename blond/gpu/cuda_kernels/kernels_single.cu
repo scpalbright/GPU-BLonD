@@ -221,22 +221,33 @@ __global__ void simple_kick(
 }
 
 extern "C"
-__global__ void rf_volt_comp(  float *voltage,
-                               float *omega_rf,
-                               float *phi_rf,
-                               float *bin_centers,
-                               int n_rf,
-                               int n_bins,
-                               int f_rf,
-                               float *rf_voltage)
+__global__ void rf_volt_comp(float *voltage,
+                             float *omega_rf,
+                             float *phi_rf,
+                             float *bin_centers,
+                             int n_rf,
+                             int n_bins,
+                             int f_rf,
+                             float *rf_voltage)
 {
     int tid = threadIdx.x + blockDim.x * blockIdx.x;
-    
+    extern __shared__ float s[];
+    if (tid == 0){
+        for (int j = 0; j < n_rf; j++) {
+            s[j] = voltage[j];
+            s[j + n_rf] = omega_rf[j];
+            s[j + 2 * n_rf] = phi_rf[j];
+        }
+    }
+
+    __syncthreads();
     for (int i = tid; i < n_bins; i += blockDim.x * gridDim.x) {
         for (int j = 0; j < n_rf; j++)
-            rf_voltage[i] = voltage[j] * sin(omega_rf[j] * bin_centers[i] + phi_rf[j]);
+            // rf_voltage[i] = voltage[j] * sin(omega_rf[j] * bin_centers[i] + phi_rf[j]);
+            rf_voltage[i] = s[j] * sinf(s[j+r_rf] * bin_centers[i] + s[j+2*n_rf]);
     }
 }
+
 
 extern "C"
 __global__ void drift(float *beam_dt,
