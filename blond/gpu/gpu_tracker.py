@@ -164,7 +164,6 @@ class gpu_RingAndRFTracker(RingAndRFTracker):
         n_turns = self.rf_params.n_turns+1
 
         
-        # sz = self.n_rf
         my_end = self.rf_params.dev_voltage.size
         gpu_rf_voltage_calc_mem_ops(dev_voltages, dev_omega_rf, dev_phi_rf,
                                     self.rf_params.dev_voltage, self.rf_params.dev_omega_rf,
@@ -177,20 +176,15 @@ class gpu_RingAndRFTracker(RingAndRFTracker):
             (self.profile.dev_bin_centers.size, bm.precision.real_t, id(self), "rf_v"))
 
         # TODO: test with multiple harmonics, think about 800 MHz OTFB
-
         if self.cavityFB:
             cavityFB_case(self.dev_rf_voltage, dev_voltages, dev_omega_rf,
                           dev_phi_rf, self.profile.dev_bin_centers,
                           self.cavityFB.V_corr, self.cavityFB.phi_corr)
-            # self.rf_voltage = voltages[0] * self.cavityFB.V_corr * \
-            #     bm.sin(omega_rf[0]*self.profile.bin_centers +
-            #             phi_rf[0] + self.cavityFB.phi_corr)
             bm.rf_volt_comp(dev_voltages, dev_omega_rf, dev_phi_rf,
                             self.profile.dev_bin_centers, self.dev_rf_voltage, f_rf=1)
         else:
             bm.rf_volt_comp(dev_voltages, dev_omega_rf, dev_phi_rf,
                             self.profile.dev_bin_centers, self.dev_rf_voltage)
-        print("rf voltage mean, std", np.mean(self.dev_rf_voltage.get()), np.std(self.dev_rf_voltage.get()))
 
     @timing.timeit(key='comp:kick')
     def kick(self, index):

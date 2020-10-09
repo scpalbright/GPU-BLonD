@@ -75,6 +75,7 @@ class gpu_TotalInducedVoltage(TotalInducedVoltage):
         self.dev_induced_voltage = get_gpuarray(
             (self.profile.n_slices, bm.precision.real_t, id(self), 'iv'))
         set_zero_real(self.dev_induced_voltage)
+        
         for induced_voltage_object in self.induced_voltage_list:
             induced_voltage_object.induced_voltage_generation(
                 beam_spectrum_dict)
@@ -165,23 +166,17 @@ class gpu_InducedVoltage(_InducedVoltage):
         if self.n_fft not in beam_spectrum_dict:
             self.profile.beam_spectrum_generation(self.n_fft)
             beam_spectrum_dict[self.n_fft] = self.profile.dev_beam_spectrum
-        # self.profile.beam_spectrum_generation(self.n_fft)
         beam_spectrum = beam_spectrum_dict[self.n_fft]
-        # print("beam_spectrum: {} {}".format(np.mean(beam_spectrum.get()), np.std(beam_spectrum.get())))
-        with timing.timed_region('serial:indVolt1Turn'):
 
+        with timing.timed_region('serial:indVolt1Turn'):
             inp = get_gpuarray((beam_spectrum.size, bm.precision.complex_t,
                                 id(self), 'inp'))
             complex_mul(self.dev_total_impedance, beam_spectrum, inp)
-            # inp = self.dev_total_impedance * self.profile.dev_beam_spectrum
             my_res = bm.irfft(inp, caller_id=id(self))
-
-            # dev_induced_voltage = - (self.beam.Particle.charge * e * self.beam.ratio *my_res )
             self.dev_induced_voltage = get_gpuarray(
                 (self.n_induced_voltage, bm.precision.real_t, id(self), 'iv'))
             gpu_mul(self.dev_induced_voltage, my_res, bm.precision.real_t(-self.beam.Particle.charge *
                                                                           e * self.beam.ratio), slice=slice(0, self.n_induced_voltage))
-            # print("induced_voltage: {} {}".format(np.mean(self.dev_induced_voltage.get()), np.std(self.dev_induced_voltage.get())))
 
     def induced_voltage_mtw(self, beam_spectrum_dict={}):
         """

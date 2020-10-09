@@ -232,7 +232,7 @@ __global__ void rf_volt_comp(double *voltage,
 {
     int tid = threadIdx.x + blockDim.x * blockIdx.x;
     extern __shared__ double s[];
-    if (tid == 0){
+    if (threadIdx.x == 0){
         for (int j = 0; j < n_rf; j++) {
             s[j] = voltage[j];
             s[j + n_rf] = omega_rf[j];

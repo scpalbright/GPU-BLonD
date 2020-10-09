@@ -37,8 +37,6 @@ beam_phase_sum = ker.get_function("beam_phase_sum")
 synch_rad = ker.get_function("synchrotron_radiation")
 synch_rad_full = ker.get_function("synchrotron_radiation_full")
 
-# beam phase kernels
-
 
 def gpu_rf_volt_comp(dev_voltage, dev_omega_rf, dev_phi_rf, dev_bin_centers, dev_rf_voltage, f_rf=0):
     assert dev_voltage.dtype == bm.precision.real_t
@@ -47,11 +45,10 @@ def gpu_rf_volt_comp(dev_voltage, dev_omega_rf, dev_phi_rf, dev_bin_centers, dev
     assert dev_bin_centers.dtype == bm.precision.real_t
     assert dev_rf_voltage.dtype == bm.precision.real_t
 
-    # print("bin_centers mean, std", np.mean(dev_bin_centers.get()), np.std(dev_bin_centers.get()))
     rvc(dev_voltage, dev_omega_rf, dev_phi_rf, dev_bin_centers,
         np.int32(dev_voltage.size), np.int32(
             dev_bin_centers.size), np.int32(f_rf), dev_rf_voltage,
-        block=block_size, grid=grid_size, 
+        block=block_size, grid=grid_size,
         shared=3*dev_voltage.size*ct.sizeof(bm.precision.real_t),
         time_kernel=True)
 
@@ -83,25 +80,25 @@ def gpu_kick(dev_voltage, dev_omega_rf, dev_phi_rf, charge, n_rf, acceleration_k
 def gpu_drift(solver_utf8, t_rev, length_ratio, alpha_order, eta_0,
               eta_1, eta_2, alpha_0, alpha_1, alpha_2, beta, energy, beam):
     solver = solver_utf8.decode('utf-8')
-    if (solver=="simple"):
-        solver=np.int32(0)
-    elif (solver=="legacy"):
-        solver=np.int32(1)
+    if (solver == "simple"):
+        solver = np.int32(0)
+    elif (solver == "legacy"):
+        solver = np.int32(1)
     else:
-        solver=np.int32(2)
-   
+        solver = np.int32(2)
+
     drift(beam.dev_dt,
-        beam.dev_dE,
-        solver,
-        bm.precision.real_t(t_rev),  bm.precision.real_t(length_ratio),
-        bm.precision.real_t(alpha_order), bm.precision.real_t(eta_0),
-        bm.precision.real_t(eta_1),  bm.precision.real_t(eta_2),
-        bm.precision.real_t(alpha_0),  bm.precision.real_t(alpha_1),
-        bm.precision.real_t(alpha_2),
-        bm.precision.real_t(beta),  bm.precision.real_t(energy),
-        np.int32(beam.dev_dt.size),
-        block=block_size, grid=grid_size, time_kernel=True)
-   
+          beam.dev_dE,
+          solver,
+          bm.precision.real_t(t_rev),  bm.precision.real_t(length_ratio),
+          bm.precision.real_t(alpha_order), bm.precision.real_t(eta_0),
+          bm.precision.real_t(eta_1),  bm.precision.real_t(eta_2),
+          bm.precision.real_t(alpha_0),  bm.precision.real_t(alpha_1),
+          bm.precision.real_t(alpha_2),
+          bm.precision.real_t(beta),  bm.precision.real_t(energy),
+          np.int32(beam.dev_dt.size),
+          block=block_size, grid=grid_size, time_kernel=True)
+
     beam.dt_obj.invalidate_cpu()
 
 
@@ -223,7 +220,9 @@ def gpu_slice(cut_left, cut_right, beam, profile):
         sm_histogram(beam.dev_dt, profile.dev_n_macroparticles, bm.precision.real_t(cut_left),
                      bm.precision.real_t(cut_right), np.uint32(n_slices),
                      np.uint32(beam.dev_dt.size),
-                     grid=grid_size, block=block_size, shared=4*n_slices, time_kernel=True)
+                     grid=grid_size, block=block_size,
+                     shared=n_slices*ct.getsizeof(ct.c_int),
+                     time_kernel=True)
     else:
         hybrid_histogram(beam.dev_dt, profile.dev_n_macroparticles, bm.precision.real_t(cut_left),
                          bm.precision.real_t(cut_right), np.uint32(n_slices),
@@ -262,8 +261,6 @@ def gpu_beam_phase(bin_centers, profile, alpha, omega_rf, phi_rf, ind, bin_size)
     dev_scoeff = get_gpuarray((1, bm.precision.real_t, 0, 'sc'))
     dev_coeff = get_gpuarray((1, bm.precision.real_t, 0, 'co'))
 
-    # print(f"bin_centers:{bin_centers[0].get()}, omega_rf: {omega_rf[ind].get()}, phi_rf: {phi_rf[ind].get()}")
-
     beam_phase_v2(bin_centers, profile,
                   bm.precision.real_t(alpha), omega_rf, phi_rf,
                   np.int32(ind), bm.precision.real_t(bin_size),
@@ -274,7 +271,4 @@ def gpu_beam_phase(bin_centers, profile, alpha, omega_rf, phi_rf, ind, bin_size)
                    np.int32(bin_centers.size), block=block_size,
                    grid=(1, 1, 1), time_kernel=True)
     to_ret = dev_scoeff[0].get()
-    # to_ret = array1[0].get()
-    # to_ret = 0
-    # print(f"Array1:{array1[0].get()} , array2: {array2[0].get()}")
     return to_ret

@@ -21,3 +21,7 @@
 *.csv
 *.png
 *tests_mpi/*
+*.cubin
+*.err
+*.out
+*.swp
