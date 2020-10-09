@@ -221,7 +221,7 @@ def gpu_slice(cut_left, cut_right, beam, profile):
                      bm.precision.real_t(cut_right), np.uint32(n_slices),
                      np.uint32(beam.dev_dt.size),
                      grid=grid_size, block=block_size,
-                     shared=n_slices*ct.getsizeof(ct.c_int),
+                     shared=n_slices*ct.sizeof(ct.c_int),
                      time_kernel=True)
     else:
         hybrid_histogram(beam.dev_dt, profile.dev_n_macroparticles, bm.precision.real_t(cut_left),
