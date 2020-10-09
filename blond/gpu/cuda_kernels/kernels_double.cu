@@ -244,7 +244,7 @@ __global__ void rf_volt_comp(double *voltage,
     for (int i = tid; i < n_bins; i += blockDim.x * gridDim.x) {
         for (int j = 0; j < n_rf; j++)
             // rf_voltage[i] = voltage[j] * sin(omega_rf[j] * bin_centers[i] + phi_rf[j]);
-            rf_voltage[i] = s[j] * sin(s[j+r_rf] * bin_centers[i] + s[j+2*n_rf]);
+            rf_voltage[i] = s[j] * sin(s[j+n_rf] * bin_centers[i] + s[j+2*n_rf]);
     }
 }
 
