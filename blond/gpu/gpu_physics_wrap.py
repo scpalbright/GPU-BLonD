@@ -49,7 +49,7 @@ def gpu_rf_volt_comp(dev_voltage, dev_omega_rf, dev_phi_rf, dev_bin_centers, dev
         np.int32(dev_voltage.size), np.int32(
             dev_bin_centers.size), np.int32(f_rf), dev_rf_voltage,
         block=block_size, grid=grid_size,
-        shared=3*dev_voltage.size*ct.sizeof(bm.precision.real_t),
+        shared=3*dev_voltage.size*ct.sizeof(bm.precision.c_real_t),
         time_kernel=True)
 
 
