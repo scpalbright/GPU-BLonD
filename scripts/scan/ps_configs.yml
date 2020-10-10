@@ -50,20 +50,20 @@ slurm:
         # - 'tp-approx0-weak-scaling-cpu-gpu'
 
         # Approximate
-        # - 'rds-timing'
-        # - 'srp-timing'
+        # - 'rds-timing-gpu'
+        # - 'srp-timing-gpu'
 
-        - 'exact-timing'
-        - 'float32-timing'
-        # - 'f32-srp-timing'
-        # - 'f32-rds-timing'
+        - 'exact-timing-gpu'
+        - 'float32-timing-gpu'
+        # - 'f32-srp-timing-gpu'
+        # - 'f32-rds-timing-gpu'
 
 
 
     configs: {
 
         # Approximate
-        'f32-srp-timing': {
+        'f32-srp-timing-gpu': {
             'exe': ['PS_main.py'],
             'particles': [1000000, 1000000, 1000000, 2000000, 2000000],
             'bunches': [1, 2, 2, 2, 2],  # 192
@@ -90,7 +90,7 @@ slurm:
         },
 
 
-        'f32-rds-timing': {
+        'f32-rds-timing-gpu': {
             'exe': ['PS_main.py'],
             # 'particles': [1000000, 1000000, 2000000, 2000000, 4000000],
             # 'bunches': [1, 2, 2, 4, 4],  # 192
@@ -119,7 +119,7 @@ slurm:
         },
 
 
-        'srp-timing': {
+        'srp-timing-gpu': {
             'exe': ['PS_main.py'],
             # 'particles': [1000000, 1000000, 2000000, 2000000, 4000000],
             # 'bunches': [1, 2, 2, 4, 4],  # 192
@@ -149,7 +149,7 @@ slurm:
         },
 
 
-        'rds-timing': {
+        'rds-timing-gpu': {
             'exe': ['PS_main.py'],
             # 'particles': [1000000, 1000000, 2000000, 2000000],
             # 'bunches': [1, 2, 2, 4],  # 192
@@ -178,7 +178,7 @@ slurm:
             'repeats': 2
         },
 
-        'exact-timing': {
+        'exact-timing-gpu': {
             'exe': ['PS_main.py'],
             # 'particles': [1000000, 1000000, 2000000, 2000000],
             # 'bunches': [1, 2, 2, 4],  # 192
@@ -207,7 +207,7 @@ slurm:
         },
 
 
-        'float32-timing': {
+        'float32-timing-gpu': {
             'exe': ['PS_main.py'],
             # 'particles': [1000000, 1000000, 2000000, 2000000],
             # 'bunches': [1, 2, 2, 4],  # 192
