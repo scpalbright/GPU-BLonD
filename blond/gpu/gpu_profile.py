@@ -194,8 +194,8 @@ class gpu_Profile(Profile):
         if self.Beam.is_splitted:
 
             # bm.mul(self.n_macroparticles, worker.workers, self.n_macroparticles)
-            d_mul_int_by_scalar(self.n_macroparticles, self.n_macroparticles,
+            d_mul_int_by_scalar(self.dev_n_macroparticles, self.dev_n_macroparticles,
                                 bm.precision.real_t(
                                     self.Beam.n_total_macroparticles/self.Beam.n_macroparticles),
-                                np.int32(self.n_macroparticles.size))
+                                np.int32(self.dev_n_macroparticles.size))
             self.n_macroparticles_obj.invalidate_gpu()
