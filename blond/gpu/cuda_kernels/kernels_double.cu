@@ -1508,7 +1508,7 @@ __global__ void d_multscalar(double *a, double *b, double c, long n)
 
 
 extern "C"
-__global__ void d_mul_int_by_scalar(int *a, int *b, double c, long n)
+__global__ void d_mul_int_by_scalar(int *a, double c, long n)
 {
     unsigned tid = threadIdx.x;
     unsigned total_threads = gridDim.x * blockDim.x;
