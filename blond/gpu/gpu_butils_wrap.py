@@ -303,6 +303,11 @@ d_multscalar = ElementwiseKernel(
     "a[i] = c*b[i]",
     "d_multscalar")
 
+d_mul_int_by_scalar = ElementwiseKernel(
+    f"int *a, int *b, {bm.precision.str} c",
+    "a[i] = c*b[i]",
+    "d_mul_int_by_scalar")
+
 
 plans_dict = {}
 inverse_plans_dict = {}

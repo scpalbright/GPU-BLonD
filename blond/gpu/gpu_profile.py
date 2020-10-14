@@ -1,10 +1,11 @@
 # from __future__ import division
 # from builtins import object
+from ..beam.profile import Profile
 import numpy as np
 from types import MethodType
 from ..utils import bmath as bm
 from ..gpu.cucache import get_gpuarray
-from ..gpu.gpu_butils_wrap import gpu_diff, cugradient, gpu_copy_d2d, gpu_interp
+from ..gpu.gpu_butils_wrap import gpu_diff, cugradient, gpu_copy_d2d, gpu_interp, d_mul_int_by_scalar
 
 from pycuda import gpuarray
 from ..gpu import grid_size, block_size
@@ -16,22 +17,23 @@ except ImportError:
 # drv.init()
 # dev = drv.Device(bm.gpuId())
 
+
 def funcs_update(prof):
-        prof.beam_profile_derivative = MethodType(gpu_beam_profile_derivative, prof)
-        old_slice = prof._slice
-        prof._slice = MethodType(gpu_slice, prof)
-        prof.beam_spectrum_generation = MethodType(
-            gpu_beam_spectrum_generation, prof)
+    prof.beam_profile_derivative = MethodType(
+        gpu_beam_profile_derivative, prof)
+    old_slice = prof._slice
+    prof._slice = MethodType(gpu_slice, prof)
+    prof.beam_spectrum_generation = MethodType(
+        gpu_beam_spectrum_generation, prof)
 
-        for i in range(len(prof.operations)):
-            if (prof.operations[i] == old_slice):
-                prof.operations[i] = prof._slice
+    for i in range(len(prof.operations)):
+        if (prof.operations[i] == old_slice):
+            prof.operations[i] = prof._slice
 
-from ..beam.profile import Profile
 
 class gpu_Profile(Profile):
 
-    ## bin_centers
+    # bin_centers
 
     @property
     def bin_centers(self):
@@ -41,17 +43,15 @@ class gpu_Profile(Profile):
     def bin_centers(self, value):
         self.bin_centers_obj.my_array = value
 
-
     @property
     def dev_bin_centers(self):
         return self.bin_centers_obj.dev_my_array
-
 
     @dev_bin_centers.setter
     def dev_bin_centers(self, value):
         self.bin_centers_obj.dev_my_array = value
 
-    ## n_macroparticles
+    # n_macroparticles
 
     @property
     def n_macroparticles(self):
@@ -61,17 +61,15 @@ class gpu_Profile(Profile):
     def n_macroparticles(self, value):
         self.n_macroparticles_obj.my_array = value
 
-
     @property
     def dev_n_macroparticles(self):
         return self.n_macroparticles_obj.dev_my_array
-
 
     @dev_n_macroparticles.setter
     def dev_n_macroparticles(self, value):
         self.n_macroparticles_obj.dev_my_array = value
 
-    ## beam_spectrum
+    # beam_spectrum
 
     @property
     def beam_spectrum(self):
@@ -81,17 +79,15 @@ class gpu_Profile(Profile):
     def beam_spectrum(self, value):
         self.beam_spectrum_obj.my_array = value
 
-
     @property
     def dev_beam_spectrum(self):
         return self.beam_spectrum_obj.dev_my_array
-
 
     @dev_beam_spectrum.setter
     def dev_beam_spectrum(self, value):
         self.beam_spectrum_obj.dev_my_array = value
 
-    ## beam_spectrum_freq
+    # beam_spectrum_freq
 
     @property
     def beam_spectrum_freq(self):
@@ -101,11 +97,9 @@ class gpu_Profile(Profile):
     def beam_spectrum_freq(self, value):
         self.beam_spectrum_freq_obj.my_array = value
 
-
     @property
     def dev_beam_spectrum_freq(self):
         return self.beam_spectrum_freq_obj.dev_my_array
-
 
     @dev_beam_spectrum_freq.setter
     def dev_beam_spectrum_freq(self, value):
@@ -119,7 +113,6 @@ class gpu_Profile(Profile):
 
         bm.slice(self.cut_left, self.cut_right, self.Beam, self)
         self.n_macroparticles_obj.invalidate_cpu()
-   
 
     @timing.timeit(key='serial:beam_spectrum_gen')
     def beam_spectrum_generation(self, n_sampling_fft):
@@ -128,7 +121,6 @@ class gpu_Profile(Profile):
         """
         temp = bm.rfft(self.dev_n_macroparticles, n_sampling_fft)
         self.dev_beam_spectrum = temp
-
 
     def beam_profile_derivative(self, mode='gradient', caller_id=None):
         """
@@ -147,7 +139,7 @@ class gpu_Profile(Profile):
             else:
                 derivative = gpuarray.empty(x.size, dtype=bm.precision.real_t)
             cugradient(bm.precision.real_t(dist_centers), self.dev_n_macroparticles,
-                    derivative, np.int32(x.size), block=block_size, grid=(16, 1, 1))
+                       derivative, np.int32(x.size), block=block_size, grid=(16, 1, 1))
         elif mode == 'diff':
             if (caller_id):
                 derivative = get_gpuarray(
@@ -161,13 +153,13 @@ class gpu_Profile(Profile):
             gpu_copy_d2d(diffCenters, self.dev_bin_centers, slice=slice(0, -1))
 
             diffCenters = diffCenters + dist_centers/2
-            derivative = gpu_interp(self.dev_bin_centers, diffCenters, derivative)
+            derivative = gpu_interp(
+                self.dev_bin_centers, diffCenters, derivative)
         else:
             # ProfileDerivativeError
             raise RuntimeError('Option for derivative is not recognized.')
 
         return x, derivative
-
 
     def reduce_histo(self, dtype=np.uint32):
         if not bm.mpiMode():
@@ -183,12 +175,13 @@ class gpu_Profile(Profile):
                 my_n_macroparticles = self.n_macroparticles.astype(
                     np.uint32, order='C')
 
-            worker.allreduce(my_n_macroparticles, dtype=np.uint32, operator='custom_sum')
+            worker.allreduce(my_n_macroparticles,
+                             dtype=np.uint32, operator='custom_sum')
 
             with timing.timed_region('serial:conversion'):
                 # with mpiprof.traced_region('serial:conversion'):
-                self.n_macroparticles = my_n_macroparticles.astype(dtype=bm.precision.real_t, order='C', copy=False)
-
+                self.n_macroparticles = my_n_macroparticles.astype(
+                    dtype=bm.precision.real_t, order='C', copy=False)
 
     @timing.timeit(key='serial:scale_histo')
     # @mpiprof.traceit(key='serial:scale_histo')
@@ -199,5 +192,10 @@ class gpu_Profile(Profile):
 
         from ..utils.mpi_config import worker
         if self.Beam.is_splitted:
-            bm.mul(self.n_macroparticles, worker.workers, self.n_macroparticles)
+
+            # bm.mul(self.n_macroparticles, worker.workers, self.n_macroparticles)
+            d_mul_int_by_scalar(self.n_macroparticles, self.n_macroparticles,
+                                bm.precision.real_t(
+                                    self.Beam.n_total_macroparticles/self.Beam.n_macroparticles),
+                                np.int32(self.n_macroparticles.size))
             self.n_macroparticles_obj.invalidate_gpu()

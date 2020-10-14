@@ -1507,6 +1507,22 @@ __global__ void d_multscalar(double *a, double *b, double c, long n)
 }
 
 
+extern "C"
+__global__ void d_mul_int_by_scalar(int *a, int *b, double c, long n)
+{
+    unsigned tid = threadIdx.x;
+    unsigned total_threads = gridDim.x * blockDim.x;
+    unsigned cta_start = blockDim.x * blockIdx.x;
+    unsigned i;
+    ;
+    for (i = cta_start + tid; i < n; i += total_threads)
+    {
+        a[i] = c * b[i];
+    }
+    ;
+}
+
+
 
 extern "C"
 __global__ void scale_kernel_int(int a, int *b, long n)
