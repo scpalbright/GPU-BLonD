@@ -1524,7 +1524,7 @@ __global__ void d_mul_int_by_scalar(int *a, float c, long n)
     ;
     for (i = cta_start + tid; i < n; i += total_threads)
     {
-        a[i] = c * b[i];
+        a[i] *= c;
     }
     ;
 }
