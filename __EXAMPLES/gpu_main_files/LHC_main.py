@@ -65,9 +65,9 @@ dt_plt = 10000      # Time steps between plots
 dt_mon = 1           # Time steps between monitoring
 dt_save = 1000000    # Time steps between saving coordinates
 if REAL_RAMP:
-    n_turns = 20100       # Number of turns to track; full ramp: 8700001
+    n_turns = 14000000       # Number of turns to track; full ramp: 8700001
 else:
-    n_turns = 5000
+    n_turns = 500000
 bl_target = 1.25e-9  # 4 sigma r.m.s. target bunch length in [ns]
 
 n_turns_reduce = 1

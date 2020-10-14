@@ -27,7 +27,6 @@ parser.add_argument('-s', '--show', action='store_true',
                     help='Show the plots.')
 
 
-
 args = parser.parse_args()
 args.cases = args.cases.split(',')
 
@@ -99,7 +98,10 @@ gconfig = {
     # 'ylim2': [10, 90],
     'yticks': [0.2, 0.4, 0.6, 0.8, 1],
     # 'yticks2': [0, 20, 40, 60, 80, 100],
-    'outfiles': ['{}/{}-{}.png', '{}/{}-{}.pdf'],
+    'outfiles': [
+        '{}/{}-{}-gpu.png',
+        # '{}/{}-{}-gpu.pdf'
+    ],
     'files': [
         # '{}/{}/approx0-interm/comm-comp-report.csv',
         # '{}/{}/approx2-interm/comm-comp-report.csv',
@@ -108,12 +110,12 @@ gconfig = {
         # '{}/{}/lb-tp-approx0-interm/comm-comp-report.csv',
         # '{}/{}/lb-tp-approx2-interm/comm-comp-report.csv',
         # '{}/{}/lb-tp-approx1-interm/comm-comp-report.csv',
-        '{}/{}/exact-timing/comm-comp-report.csv',
-        '{}/{}/rds-timing/comm-comp-report.csv',
-        '{}/{}/srp-timing/comm-comp-report.csv',
-        '{}/{}/float32-timing/comm-comp-report.csv',
-        '{}/{}/f32-rds-timing/comm-comp-report.csv',
-        '{}/{}/f32-srp-timing/comm-comp-report.csv',
+        '{}/{}/exact-timing-gpu/comm-comp-report.csv',
+        '{}/{}/rds-timing-gpu/comm-comp-report.csv',
+        '{}/{}/srp-timing-gpu/comm-comp-report.csv',
+        '{}/{}/float32-timing-gpu/comm-comp-report.csv',
+        '{}/{}/f32-rds-timing-gpu/comm-comp-report.csv',
+        # '{}/{}/f32-srp-timing-gpu/comm-comp-report.csv',
     ],
     'lines': {
         # 'mpi': ['mpich3', 'mvapich2', 'openmpi3'],
@@ -122,6 +124,7 @@ gconfig = {
         # 'red': ['1', '2', '3', '4'],
         'red': ['1', '2', '3'],
         'prec': ['single', 'double'],
+        'omp': ['20'],
         # 'ppb': ['4000000'],
         # 'lba': ['500'],
         # 'b': ['96', '48', '72', '21'],
@@ -131,13 +134,13 @@ gconfig = {
 
 }
 
-plt.rcParams['ps.useafm'] = True
-plt.rcParams['pdf.use14corefonts'] = True
-plt.rcParams['text.usetex'] = True  # Let TeX do the typsetting
 # Force sans-serif math mode (for axes labels)
-plt.rcParams['text.latex.preamble'] = [r'\usepackage{sansmath}', r'\sansmath']
-plt.rcParams['font.family'] = 'sans-serif'  # ... for regular text
-plt.rcParams['font.sans-serif'] = 'Helvetica'
+# plt.rcParams['ps.useafm'] = True
+# plt.rcParams['pdf.use14corefonts'] = True
+# plt.rcParams['text.usetex'] = True  # Let TeX do the typsetting
+# plt.rcParams['text.latex.preamble'] = [r'\usepackage{sansmath}', r'\sansmath']
+# plt.rcParams['font.family'] = 'sans-serif'  # ... for regular text
+# plt.rcParams['font.sans-serif'] = 'Helvetica'
 # 'Helvetica, Avant Garde, Computer Modern Sans serif' # Choose a nice font here
 
 # plt.rcParams['font.family'] = gconfig['fontname']
@@ -176,7 +179,7 @@ if __name__ == '__main__':
                     plots_dir['_{}_tp1'.format(key)] = temp[key].copy()
                 else:
                     plots_dir['_{}_tp0'.format(key)] = temp[key].copy()
-        
+
         width = step / (len(plots_dir.keys()))
 
         # First the reference value
@@ -203,7 +206,7 @@ if __name__ == '__main__':
             this_filename[:-3], case, 'Plotting data'))
         # To sort the keys, by approx and then reduce value
         print(plots_dir.keys())
-        keys =['_'.join(a.split('_')[1:4]) for a in list(plots_dir.keys())]
+        keys = ['_'.join(a.split('_')[1:4]) for a in list(plots_dir.keys())]
         print(keys)
         keys = np.array(list(plots_dir.keys()))[np.argsort(keys)]
         idx = 0
@@ -314,13 +317,13 @@ if __name__ == '__main__':
     #                 **gconfig['annotate'])
     # pos += step
 
-    plt.ylim(gconfig['ylim'])
+    # plt.ylim(gconfig['ylim'])
     handles, labels = ax.get_legend_handles_labels()
     # print(labels)
 
     plt.legend(handles=handles, labels=labels, **gconfig['legend'])
-    _,xmax = plt.xlim()
-    plt.xlim(xmin=0-width, xmax=xmax-3*width/2)
+    _, xmax = plt.xlim()
+    # plt.xlim(xmin=0-width, xmax=xmax-3*width/2)
     plt.yticks(gconfig['yticks'], **gconfig['ticks'])
 
     plt.xticks(np.arange(len(xref)), np.array(xref, int), **gconfig['xticks'])
