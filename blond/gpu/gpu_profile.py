@@ -196,6 +196,5 @@ class gpu_Profile(Profile):
             # bm.mul(self.n_macroparticles, worker.workers, self.n_macroparticles)
             d_mul_int_by_scalar(self.dev_n_macroparticles, self.dev_n_macroparticles,
                                 bm.precision.real_t(
-                                    self.Beam.n_total_macroparticles/self.Beam.n_macroparticles),
-                                np.int32(self.dev_n_macroparticles.size))
+                                    self.Beam.n_total_macroparticles/self.Beam.n_macroparticles))
             self.n_macroparticles_obj.invalidate_gpu()
