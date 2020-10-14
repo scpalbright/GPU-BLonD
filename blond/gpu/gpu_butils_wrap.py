@@ -304,8 +304,8 @@ d_multscalar = ElementwiseKernel(
     "d_multscalar")
 
 d_mul_int_by_scalar = ElementwiseKernel(
-    f"int *a, int *b, {bm.precision.str} c",
-    "a[i] = c*b[i]",
+    f"int *a, {bm.precision.str} c",
+    "a[i] *= c",
     "d_mul_int_by_scalar")
 
 

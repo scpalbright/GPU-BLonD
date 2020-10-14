@@ -192,9 +192,10 @@ class gpu_Profile(Profile):
 
         from ..utils.mpi_config import worker
         if self.Beam.is_splitted:
-
+            print("Scaling factor: {}".format(bm.precision.real_t(
+                                    self.Beam.n_total_macroparticles/self.Beam.n_macroparticles)))
             # bm.mul(self.n_macroparticles, worker.workers, self.n_macroparticles)
-            d_mul_int_by_scalar(self.dev_n_macroparticles, self.dev_n_macroparticles,
+            d_mul_int_by_scalar(self.dev_n_macroparticles,
                                 bm.precision.real_t(
                                     self.Beam.n_total_macroparticles/self.Beam.n_macroparticles))
             self.n_macroparticles_obj.invalidate_gpu()
