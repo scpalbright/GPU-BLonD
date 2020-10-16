@@ -75,7 +75,7 @@ class gpu_TotalInducedVoltage(TotalInducedVoltage):
         self.dev_induced_voltage = get_gpuarray(
             (self.profile.n_slices, bm.precision.real_t, id(self), 'iv'))
         set_zero_real(self.dev_induced_voltage)
-        
+
         for induced_voltage_object in self.induced_voltage_list:
             induced_voltage_object.induced_voltage_generation(
                 beam_spectrum_dict)
@@ -87,6 +87,7 @@ class gpu_TotalInducedVoltage(TotalInducedVoltage):
                       slice=slice(0, self.profile.n_slices))
 
         # print("total induced_voltage: {} {}".format(np.mean(self.dev_induced_voltage.get()), np.std(self.dev_induced_voltage.get())))
+
 
 def iv_update_funcs(obj, is_ii=False):
     if (bm.gpuMode()):
@@ -175,8 +176,10 @@ class gpu_InducedVoltage(_InducedVoltage):
             my_res = bm.irfft(inp, caller_id=id(self))
             self.dev_induced_voltage = get_gpuarray(
                 (self.n_induced_voltage, bm.precision.real_t, id(self), 'iv'))
-            gpu_mul(self.dev_induced_voltage, my_res, bm.precision.real_t(-self.beam.Particle.charge *
-                                                                          e * self.beam.ratio), slice=slice(0, self.n_induced_voltage))
+            gpu_mul(self.dev_induced_voltage, my_res,
+                    bm.precision.real_t(-self.beam.Particle.charge *
+                                        e * self.beam.ratio),
+                    slice=slice(0, self.n_induced_voltage))
 
     def induced_voltage_mtw(self, beam_spectrum_dict={}):
         """
@@ -276,9 +279,9 @@ class gpu_InductiveImpedance(gpu_InducedVoltage, InductiveImpedance):
 
         index = self.RFParams.counter[0]
 
-        sv = - (self.beam.Particle.charge * e / (2 * np.pi) *
-                self.beam.ratio * self.Z_over_n[index] *
-                self.RFParams.t_rev[index] / self.profile.bin_size)
+        sv = - (self.beam.Particle.charge * e / (2 * np.pi)
+                * self.beam.ratio * self.Z_over_n[index]
+                * self.RFParams.t_rev[index] / self.profile.bin_size)
 
         induced_voltage = self.profile.beam_profile_derivative(
             self.deriv_mode, caller_id=id(self))[1]

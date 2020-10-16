@@ -65,7 +65,7 @@ gconfig = {
     # 'x_to_keep': [4, 8, 16, 32, 64],
     # 'omp_name': 'omp',
     'y_name': 'total_time(sec)',
-    'xlabel': 'Functions',
+    'xlabel': 'Workers (x1 GPU/ x20 Cores)',
     'ylabel': r'Norm. Runtime',
     'title': {
         # 's': '{}'.format(),
@@ -74,9 +74,9 @@ gconfig = {
         # 'x': 0.55,
         'fontweight': 'bold',
     },
-    'figsize': [6, 2.2],
+    'figsize': [6.4, 2.2],
     'annotate': {
-        'fontsize': 9,
+        'fontsize': 8.5,
         'textcoords': 'data',
         'va': 'bottom',
         'ha': 'center'
@@ -84,10 +84,10 @@ gconfig = {
     'ticks': {'fontsize': 10},
     'fontsize': 10,
     'legend': {
-        'loc': 'upper right', 'ncol': 1, 'handlelength': 1.5, 'fancybox': False,
-        'framealpha': 0.8, 'fontsize': 10, 'labelspacing': 0, 'borderpad': 0.5,
+        'loc': 'upper left', 'ncol': 10, 'handlelength': 1.5, 'fancybox': False,
+        'framealpha': 0.8,'frameon': False, 'fontsize': 9, 'labelspacing': 0, 'borderpad': 0.5,
         'handletextpad': 0.5, 'borderaxespad': 0.1, 'columnspacing': 0.8,
-        'bbox_to_anchor': (1.21, 1.)
+        'bbox_to_anchor': (0, 1.25)
     },
     'subplots_adjust': {
         'wspace': 0.1, 'hspace': 0.1,
@@ -112,10 +112,10 @@ gconfig = {
     ],
     'files': [
         '{}/{}/exact-timing-gpu/avg-report.csv',
-        '{}/{}/rds-timing-gpu/avg-report.csv',
-        '{}/{}/srp-timing-gpu/avg-report.csv',
+        # '{}/{}/rds-timing-gpu/avg-report.csv',
+        # '{}/{}/srp-timing-gpu/avg-report.csv',
         '{}/{}/float32-timing-gpu/avg-report.csv',
-        '{}/{}/f32-rds-timing-gpu/avg-report.csv',
+        # '{}/{}/f32-rds-timing-gpu/avg-report.csv',
         # '{}/{}/lb-tp-approx1-strong-scaling/comm-comp-report.csv',
     ],
     'lines': {
@@ -136,9 +136,11 @@ gconfig = {
         'LIKick': ['comp:LIKick'],
         'kick': ['comp:kick'],
         'drift': ['comp:drift'],
-        'histo': ['comp:histo', 'serial:scale_histo'],
-        'indVolt': ['serial:InductiveImped', 'serial:beam_spectrum_gen',
-                    'serial:indVolt1Turn', 'serial:shift_trev_time'],
+        # 'histo': ['comp:histo', 'serial:scale_histo'],
+        'iv1turn': ['serial:indVolt1Turn'],
+        'bspectr': ['serial:beam_spectrum_gen'],
+        # 'indVolt': ['serial:InductiveImped', 'serial:beam_spectrum_gen',
+        #             'serial:indVolt1Turn', 'serial:shift_trev_time'],
         'updateImp': ['serial:updateImp'],
         'total': ['total_time'],
         'other': ['serial:beam_phase', 'serial:phase_difference', 'serial:RFVCalc', 'serial:binShift']
@@ -149,8 +151,10 @@ gconfig = {
         'total': ['0.1', ''],
         'kick': ['0.1', 'xx'],
         'drift': ['0.3', ''],
-        'histo': ['0.3', 'xx'],
-        'indVolt': ['0.5', ''],
+        # 'histo': ['0.3', 'xx'],
+        # 'indVolt': ['0.5', ''],
+        'iv1turn': ['0.3', 'xx'],
+        'bspectr': ['0.5', ''],
         'updateImp': ['0.5', 'xx'],
         'other': ['0.95', ''],
         'LIKick': ['0.9', 'xx'],
@@ -227,10 +231,12 @@ if __name__ == '__main__':
             pos = 0
             width = 1.
             # width = step/3
-            xticks = []
+            xticks = [[], []]
             labels = set()
             offset = 1. / (len(final_dir[name])+1.)
             for workers, funcs in final_dir[name].items():
+                xticks[0].append(pos)
+                xticks[1].append(workers)
                 for func, val in funcs.items():
                     if func not in labels:
                         labels.add(func)
@@ -271,15 +277,15 @@ if __name__ == '__main__':
                 #         autopct='%1.1f', pctdistance=0.8,
                 #         labeldistance=1.1)
                 # ax.axis('equal')
-            plt.title(f'{case.upper()}-{name}', **gconfig['title'])
-
-            plt.ylim(gconfig['ylim'])
+            # plt.title(f'{case.upper()}-{name}', **gconfig['title'])
+            plt.scatter([],[], s=0, label=f'{case.upper()}-{name}')
+            # plt.ylim(gconfig['ylim'])
             plt.ylabel(gconfig['ylabel'], labelpad=2, color='xkcd:black',
                        fontsize=gconfig['fontsize'])
             plt.xlabel(gconfig['xlabel'], labelpad=2, color='xkcd:black',
                        fontsize=gconfig['fontsize'])
 
-            plt.xticks(np.arange(pos)+width/2, xticks, **gconfig['ticks'])
+            plt.xticks(np.array(xticks[0])+(xticks[0][1]-xticks[0][0])/2, xticks[1], **gconfig['ticks'])
             plt.legend(**gconfig['legend'])
 
             plt.tight_layout()
