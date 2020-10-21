@@ -10,6 +10,7 @@
 #SBATCH --partition=gpu    # Partition
 #SBATCH --account=pa200702    # Replace with your system project
 #SBATCH --gres=gpu:2		# For srun, allow access to 2 GPUs
+#SBATCH --exclude=gpu21
 
 which python
 gcc --version
