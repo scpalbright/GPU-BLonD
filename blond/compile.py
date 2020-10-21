@@ -51,6 +51,11 @@ parser.add_argument('-c', '--compiler', type=str, default='g++',
 parser.add_argument('--with-fftw', action='store_true',
                     help='Use the FFTs from FFTW3.')
 
+
+parser.add_argument('-gpu', '--gpu', action='store_true',
+                    help='Compile the GPU kernels too.'
+                    'Default: Only compile the C++ library.')
+
 parser.add_argument('--with-fftw-threads', action='store_true',
                     help='Use the multi-threaded FFTs from FFTW3.')
 
@@ -78,7 +83,8 @@ libs = []
 
 # EXAMPLE FLAGS: -Ofast -std=c++11 -fopt-info-vec -march=native
 #                -mfma4 -fopenmp -ftree-vectorizer-verbose=1
-cflags = ['-O3', '-ffast-math', '-std=c++11', '-shared']
+cflags = ['-O3', '-ffast-math', '-std=gnu++11', '-shared',
+          '-mavx', '-march=ivybridge', '-Wno-psabi']
 
 cpp_files = [
     os.path.join(basepath, 'cpp_routines/kick.cpp'),
@@ -90,11 +96,13 @@ cpp_files = [
     os.path.join(basepath, 'cpp_routines/fast_resonator.cpp'),
     os.path.join(basepath, 'cpp_routines/beam_phase.cpp'),
     os.path.join(basepath, 'cpp_routines/fft.cpp'),
-    os.path.join(basepath, 'cpp_routines/openmp.cpp'),
+    os.path.join(basepath, 'cpp_routines/common.cpp'),
     os.path.join(basepath, 'toolbox/tomoscope.cpp'),
     os.path.join(basepath, 'synchrotron_radiation/synchrotron_radiation.cpp'),
     os.path.join(basepath, 'beam/sparse_histogram.cpp'),
 ]
+
+nvccflags = ['nvcc', '--cubin', '-arch', 'sm_35', '-O3', '--use_fast_math']
 
 
 if (__name__ == "__main__"):
@@ -128,13 +136,13 @@ if (__name__ == "__main__"):
         if 'win' in sys.platform:
             libs += ['-lfftw3-3']
         else:
-            libs += ['-lfftw3']
+            libs += ['-lfftw3', '-lfftw3f']
             if args.with_fftw_omp:
                 cflags += ['-DFFTW3PARALLEL']
-                libs += ['-lfftw3_omp']
+                libs += ['-lfftw3_omp', '-lfftw3f_omp']
             elif args.with_fftw_threads:
                 cflags += ['-DFFTW3PARALLEL']
-                libs += ['-lfftw3_threads']
+                libs += ['-lfftw3_threads', '-lfftw3f_threads']
 
     if ('posix' in os.name):
         cflags += ['-fPIC']
@@ -166,6 +174,7 @@ if (__name__ == "__main__"):
     print('C++ Compiler: ', compiler)
     print('Compiler flags: ', ' '.join(cflags))
     print('Extra libraries: ', ' '.join(libs))
+    print('Compile the GPU kernels: ', args.gpu)
     subprocess.call([compiler, '--version'])
 
     try:
@@ -181,3 +190,43 @@ if (__name__ == "__main__"):
     except Exception as e:
         print('\nCompilation failed.')
         print(e)
+
+    # Compile the GPU library
+    if args.gpu:
+        print('\nCompiling the CUDA library.')
+        libname_double = os.path.join(basepath, 'gpu/cuda_kernels/kernels_double.cubin')
+        libname_single = os.path.join(basepath, 'gpu/cuda_kernels/kernels_single.cubin')
+        # we need to get the header files location
+        output = subprocess.run('pip show pycuda | grep Location', shell=True,
+                                stdout=subprocess.PIPE,
+                                encoding='utf-8')
+        pycudaloc = os.path.join(output.stdout.split(
+            'Location:')[1].strip(), 'pycuda/cuda')
+
+        command = nvccflags + ['-o', libname_single, '-I'+pycudaloc,
+                               os.path.join(basepath, 'gpu/cuda_kernels/kernels_single.cu')]
+        subprocess.call(command)
+
+        command = nvccflags + ['-o', libname_double, '-I'+pycudaloc,
+                               os.path.join(basepath, 'gpu/cuda_kernels/kernels_double.cu')]
+        subprocess.call(command)
+
+
+        if os.path.isfile(libname_single) and os.path.isfile(libname_double):
+            print('\nThe CUDA library has been compiled.')
+        else:
+            print('\nThe CUDA library compilation failed.')
+
+
+        # try:
+        #     command = nvccflags + ['-o', libname, '-I'+pycudaloc,
+        #                            os.path.join(basepath, 'gpu/cuda_kernels/kernels_aa.cu')]
+        #     subprocess.call(command)
+        # except:
+        #     command = nvccflags + ['-o', libname, '-I'+pycudaloc,
+        #                            os.path.join(basepath, 'gpu/cuda_kernels/kernels_na.cu')]
+        #     subprocess.call(command)
+        # if os.path.isfile(libname):
+        #     print('\nThe CUDA library has been compiled.')
+        # else:
+        #     print('\nThe CUDA library compilation failed.')

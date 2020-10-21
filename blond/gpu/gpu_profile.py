@@ -4,13 +4,9 @@ import numpy as np
 from types import MethodType
 from ..utils import bmath as bm
 from ..gpu.cucache import get_gpuarray
-from pycuda.compiler import SourceModule
-# import pycuda.reduction as reduce
-from pycuda.elementwise import ElementwiseKernel
 from ..gpu.gpu_butils_wrap import gpu_diff, cugradient, gpu_copy_d2d, gpu_interp
 
 from pycuda import gpuarray
-# , driver as drv, tools
 from ..gpu import grid_size, block_size
 try:
     from pyprof import timing
@@ -147,21 +143,21 @@ class gpu_Profile(Profile):
         elif mode == 'gradient':
             if (caller_id):
                 derivative = get_gpuarray(
-                    (x.size, np.float64, caller_id, 'der'), True)
+                    (x.size, bm.precision.real_t, caller_id, 'der'), True)
             else:
-                derivative = gpuarray.zeros(x.size, dtype=np.float64)
-            cugradient(np.float64(dist_centers), self.dev_n_macroparticles,
+                derivative = gpuarray.empty(x.size, dtype=bm.precision.real_t)
+            cugradient(bm.precision.real_t(dist_centers), self.dev_n_macroparticles,
                     derivative, np.int32(x.size), block=block_size, grid=(16, 1, 1))
         elif mode == 'diff':
             if (caller_id):
                 derivative = get_gpuarray(
-                    (x.size, np.float64, caller_id, 'der'), True)
+                    (x.size, bm.precision.real_t, caller_id, 'der'), True)
             else:
-                derivative = gpuarray.zeros(
-                    self.dev_n_macroparticles.size-1, np.float64)
+                derivative = gpuarray.empty(
+                    self.dev_n_macroparticles.size-1, bm.precision.real_t)
             gpu_diff(self.dev_n_macroparticles, derivative, dist_centers)
             diffCenters = get_gpuarray(
-                (self.dev_bin_centers.size-1, np.float64, caller_id, 'dC'))
+                (self.dev_bin_centers.size-1, bm.precision.real_t, caller_id, 'dC'))
             gpu_copy_d2d(diffCenters, self.dev_bin_centers, slice=slice(0, -1))
 
             diffCenters = diffCenters + dist_centers/2
@@ -171,3 +167,37 @@ class gpu_Profile(Profile):
             raise RuntimeError('Option for derivative is not recognized.')
 
         return x, derivative
+
+
+    def reduce_histo(self, dtype=np.uint32):
+        if not bm.mpiMode():
+            raise RuntimeError(
+                'ERROR: Cannot use this routine unless in MPI Mode')
+
+        from ..utils.mpi_config import worker
+        worker.sync()
+        if self.Beam.is_splitted:
+
+            with timing.timed_region('serial:conversion'):
+                # with mpiprof.traced_region('serial:conversion'):
+                my_n_macroparticles = self.n_macroparticles.astype(
+                    np.uint32, order='C')
+
+            worker.allreduce(my_n_macroparticles, dtype=np.uint32, operator='custom_sum')
+
+            with timing.timed_region('serial:conversion'):
+                # with mpiprof.traced_region('serial:conversion'):
+                self.n_macroparticles = my_n_macroparticles.astype(dtype=bm.precision.real_t, order='C', copy=False)
+
+
+    @timing.timeit(key='serial:scale_histo')
+    # @mpiprof.traceit(key='serial:scale_histo')
+    def scale_histo(self):
+        if not bm.mpiMode():
+            raise RuntimeError(
+                'ERROR: Cannot use this routine unless in MPI Mode')
+
+        from ..utils.mpi_config import worker
+        if self.Beam.is_splitted:
+            bm.mul(self.n_macroparticles, worker.workers, self.n_macroparticles)
+            self.n_macroparticles_obj.invalidate_gpu()

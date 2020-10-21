@@ -5,11 +5,11 @@ import numpy as np
 from ..toolbox.next_regular import next_regular
 from ..utils import bmath as bm
 from types import MethodType
-from ..gpu.gpu_butils_wrap import gpu_copy_one, set_zero, triple_kernel,\
-    first_kernel_x, second_kernel_x, third_kernel_x, indexing_double, indexing_int, sincos_mul_add, mul_d, gpu_trapz_2, sincos_mul_add_2
+from ..gpu.gpu_butils_wrap import gpu_copy_one, triple_kernel,\
+    first_kernel_x, second_kernel_x, third_kernel_x, indexing_double, indexing_int, sincos_mul_add, mul_d, sincos_mul_add_2
 from ..gpu.cucache import get_gpuarray
-from ..utils.bphysics_wrap import beam_phase as cpu_beamphase
-import pycuda.cumath as cm
+# from ..utils.bphysics_wrap import beam_phase as cpu_beamphase
+# import pycuda.cumath as cm
 from pycuda import gpuarray
 # from ..gpu import grid_size, block_size
 # , driver as drv, tools
@@ -27,6 +27,7 @@ except ImportError:
 # str2 = drv.Stream()
 from ..llrf.beam_feedback import BeamFeedback
 
+
 class gpu_BeamFeedback(BeamFeedback):
 
     @timing.timeit(key='serial:beam_phase')
@@ -38,16 +39,17 @@ class gpu_BeamFeedback(BeamFeedback):
         beam phase, projected to the range -Pi/2 to 3/2 Pi. Note that this beam
         phase is already w.r.t. the instantaneous RF phase.*
         '''
-        omega_rf = self.rf_station.dev_omega_rf[self.rf_station.counter[0]].get()
+        omega_rf = self.rf_station.dev_omega_rf[self.rf_station.counter[0]].get(
+        )
         phi_rf = self.rf_station.dev_phi_rf[self.rf_station.counter[0]].get()
 
         if self.time_offset is None:
             coeff = bm.beam_phase(self.profile.dev_bin_centers,
-                                self.profile.dev_n_macroparticles,
-                                self.alpha, self.rf_station.dev_omega_rf,
-                                self.rf_station.dev_phi_rf,
-                                self.rf_station.counter[0],
-                                self.profile.bin_size)
+                                  self.profile.dev_n_macroparticles,
+                                  self.alpha, self.rf_station.dev_omega_rf,
+                                  self.rf_station.dev_phi_rf,
+                                  self.rf_station.counter[0],
+                                  self.profile.bin_size)
 
         else:
             indexes = self.profile.bin_centers >= self.time_offset
@@ -55,39 +57,40 @@ class gpu_BeamFeedback(BeamFeedback):
 
             gpu_indexing = gpuarray.to_gpu(indexing[0])
             bin_centers_indexed = get_gpuarray(
-                (gpu_indexing.size, np.float64, 0, "bc"))
+                (gpu_indexing.size, bm.precision.real_t, 0, "bc"))
             indexing_double(bin_centers_indexed,
                             self.profile.dev_bin_centers, gpu_indexing)
             n_macroparticles_indexed = get_gpuarray(
-                (gpu_indexing.size, np.float64, 0, "mc"))
+                (gpu_indexing.size, bm.precision.real_t, 0, "mc"))
             indexing_int(n_macroparticles_indexed,
-                        self.profile.dev_n_macroparticles, gpu_indexing)
+                         self.profile.dev_n_macroparticles, gpu_indexing)
 
             time_offset = self.time_offset
 
-            sin_result = get_gpuarray((gpu_indexing.size, np.float64, 0, "sin"))
-            cos_result = get_gpuarray((gpu_indexing.size, np.float64, 0, "cos"))
+            sin_result = get_gpuarray(
+                (gpu_indexing.size, bm.precision.real_t, 0, "sin"))
+            cos_result = get_gpuarray(
+                (gpu_indexing.size, bm.precision.real_t, 0, "cos"))
 
             sincos_mul_add(bin_centers_indexed, omega_rf,
-                        phi_rf, sin_result, cos_result)
+                           phi_rf, sin_result, cos_result)
 
             # Convolve with window function
             scoeff = np.trapz(np.exp(self.alpha*(self.profile.bin_centers[indexes] -
-                                                time_offset)) *
-                            np.sin(omega_rf*self.profile.bin_centers[indexes] +
-                                    phi_rf) *
-                            self.profile.n_macroparticles[indexes],
-                            dx=self.profile.bin_size)
+                                                 time_offset)) *
+                              np.sin(omega_rf*self.profile.bin_centers[indexes] +
+                                     phi_rf) *
+                              self.profile.n_macroparticles[indexes],
+                              dx=self.profile.bin_size)
             ccoeff = np.trapz(np.exp(self.alpha*(self.profile.bin_centers[indexes] -
-                                                time_offset)) *
-                            np.cos(omega_rf*self.profile.bin_centers[indexes] +
-                                    phi_rf) *
-                            self.profile.n_macroparticles[indexes],
-                            dx=self.profile.bin_size)
+                                                 time_offset)) *
+                              np.cos(omega_rf*self.profile.bin_centers[indexes] +
+                                     phi_rf) *
+                              self.profile.n_macroparticles[indexes],
+                              dx=self.profile.bin_size)
             coeff = scoeff/ccoeff
 
         self.phi_beam = np.arctan(coeff) + np.pi
-
 
     def track(self):
         '''
@@ -101,14 +104,23 @@ class gpu_BeamFeedback(BeamFeedback):
 
         # Update the RF frequency of all systems for the next turn
         counter = self.rf_station.counter[0] + 1
+        # assert self.rf_station.dev_omega_rf.dtype == bm.precision.real_t
+        # assert self.rf_station.dev_harmonic.dtype == bm.precision.real_t
+        # assert self.rf_station.dev_dphi_rf.dtype == bm.precision.real_t
+        # assert self.rf_station.dev_omega_rf_d.dtype == bm.precision.real_t
+        # assert self.rf_station.dev_phi_rf.dtype == bm.precision.real_t
+        # print("omega_rf_d size: {}".format(self.rf_station.dev_omega_rf_d.size))
+        # print("omega_rf_d:{}".format(self.rf_station.dev_omega_rf_d))
 
         # first_elementwise_kernel,
         triple_kernel(self.rf_station.dev_omega_rf, self.rf_station.dev_harmonic,
-                    self.rf_station.dev_dphi_rf, self.rf_station.dev_omega_rf_d,
-                    self.rf_station.dev_phi_rf, np.float64(np.pi),
-                    np.float64(self.domega_rf), np.int32(
-                        self.rf_station.n_turns+1),
-                    np.int32(counter), np.int32(self.rf_station.n_rf), block=(32, 1, 1), grid=(1, 1, 1))
+                      self.rf_station.dev_dphi_rf, self.rf_station.dev_omega_rf_d,
+                      self.rf_station.dev_phi_rf,
+                      # bm.precision.real_t(np.pi),
+                      bm.precision.real_t(self.domega_rf),
+                      np.int32(self.rf_station.n_turns+1),
+                      np.int32(counter), np.int32(self.rf_station.n_rf),
+                      block=(32, 1, 1), grid=(1, 1, 1))
 
         # CPU CODE
         # self.rf_station.omega_rf[:, counter] += self.domega_rf * \
@@ -126,7 +138,6 @@ class gpu_BeamFeedback(BeamFeedback):
         self.rf_station.dphi_rf_obj.invalidate_cpu()
         self.rf_station.phi_rf_obj.invalidate_cpu()
 
-
     @timing.timeit(key='serial:beam_phase_sharpWindow')
     def beam_phase_sharpWindow(self):
         '''
@@ -137,23 +148,23 @@ class gpu_BeamFeedback(BeamFeedback):
         '''
         # Main RF frequency at the present turn
         turn = self.rf_station.counter[0]
-        dummy = gpuarray.zeros(1, dtype=np.float64)
+        dummy = gpuarray.empty(1, dtype=bm.precision.real_t)
         gpu_copy_one(dummy, self.rf_station.dev_omega_rf,
-                    self.rf_station.counter[0], slice=slice(0, 1))
+                     self.rf_station.counter[0], slice=slice(0, 1))
         # self.rf_station.omega_rf[0, self.rf_station.counter[0]]
         omega_rf = dummy.get()[0]
         gpu_copy_one(dummy, self.rf_station.dev_phi_rf,
-                    self.rf_station.counter[0], slice=slice(0, 1))
+                     self.rf_station.counter[0], slice=slice(0, 1))
         # self.rf_station.phi_rf[0, self.rf_station.counter[0]]
         phi_rf = dummy.get()[0]
         needs_indexing = True
 
         if self.alpha != 0.0:
             indexes = np.logical_and((self.time_offset - np.pi / omega_rf)
-                                    <= self.profile.bin_centers,
-                                    self.profile.bin_centers
-                                    <= (-1/self.alpha + self.time_offset -
-                                        2 * np.pi / omega_rf))
+                                     <= self.profile.bin_centers,
+                                     self.profile.bin_centers
+                                     <= (-1/self.alpha + self.time_offset -
+                                         2 * np.pi / omega_rf))
             indexing = np.where(indexes)
         else:
             indexes = np.ones(self.profile.n_slices, dtype=bool)
@@ -209,7 +220,6 @@ class gpu_BeamFeedback(BeamFeedback):
 
         self.phi_beam = cpu_phi_beam
 
-
     def LHC(self):
         counter = self.rf_station.counter[0]
         dphi_rf = self.rf_station.dev_dphi_rf[0].get()
@@ -219,7 +229,7 @@ class gpu_BeamFeedback(BeamFeedback):
         # Frequency correction from phase loop and synchro loop
         self.domega_rf = - self.gain*self.dphi \
             - self.gain2*(self.lhc_y + self.lhc_a[counter]
-                        * (dphi_rf + self.reference))
+                          * (dphi_rf + self.reference))
 
         # Update recursion variable
         self.lhc_y = (1 - self.lhc_t[counter])*self.lhc_y + \

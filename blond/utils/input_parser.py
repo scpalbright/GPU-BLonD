@@ -66,8 +66,8 @@ parser.add_argument('-seed', '--seed', type=int, default=0,
                     help='Seed value for the particle distribution generation.'
                     '\nDefault: None')
 
-parser.add_argument('-gpu', '--gpu', type=int, choices=[0, 1], default=0,
-                    help='Use the GPU to run the computational core: 0 (OFF), 1 (ON)'
+parser.add_argument('-gpu', '--gpu', type=int, default=0,
+                    help='Use the GPU to run the computational core: 0 (OFF), num (ON, number of gpus to use)'
                     'Default: 0 (OFF)')
 
 
@@ -82,13 +82,14 @@ parser.add_argument('-tracefile', '--tracefile', type=str, default='mpe-trace',
 parser.add_argument('-lb', '--loadbalance', type=str,
                     default='off',
                     help='Load balance configuration. Format: '
-                    'type,arg,cutoff,decay\n'
+                    'type,arg,cutoff,decay,keep\n'
                     'type: off, times, interval, reportonly.\n'
-                    'arg: Number of times to run or interval in turns, ex: 100'
+                    'arg: Number of times to run or interval in turns, ex: 100. Default: 500'
                     'cutoff: A percentage that defines the minimum number of particles'
-                    'in a transaction. ex: 0.01 for 1 percent of the total'
+                    'in a transaction. ex: 0.01 for 1 percent of the total. Default: 0.03'
                     'decay: The weight function has the form exp(-x/decay).'
-                    'Lower values give more weight to the last measurements'
+                    'Lower values give more weight to the last measurements. Default: 5'
+                    'keep: Only consider the last keep number of measurements. Default: 20'
                     'Default: off ')
 
 

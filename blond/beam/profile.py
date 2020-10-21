@@ -120,8 +120,8 @@ class CutOptions(object):
             # CutError
             raise RuntimeError('cuts_unit should be "s" or "rad"')
 
-        self.edges = np.zeros(n_slices + 1, dtype=float)
-        self.bin_centers = np.zeros(n_slices, dtype=float)
+        self.edges = np.zeros(n_slices + 1, dtype=bm.precision.real_t, order='C')
+        self.bin_centers = np.zeros(n_slices, dtype=bm.precision.real_t, order='C')
 
     def set_cuts(self, Beam=None):
         """
@@ -154,7 +154,7 @@ class CutOptions(object):
                                                             self.cuts_unit))
 
         self.edges = np.linspace(self.cut_left, self.cut_right,
-                                 self.n_slices + 1)
+                                 self.n_slices + 1).astype(dtype=bm.precision.real_t, order='C', copy=False)
         self.bin_centers = (self.edges[:-1] + self.edges[1:])/2
         self.bin_size = (self.cut_right - self.cut_left) / self.n_slices
 
@@ -395,13 +395,11 @@ class Profile(object):
         self.set_slices_parameters()
 
         # Initialize profile array as zero array
-        self.n_macroparticles = np.zeros(self.n_slices, dtype=float)
-        
-        # Initialize beam_spectrum and beam_spectrum_freq as empty arrays
-        self.beam_spectrum = np.array([], dtype=np.complex128)
-        
+        self.n_macroparticles = np.zeros(self.n_slices, dtype=bm.precision.real_t, order='C')
 
-        self.beam_spectrum_freq = np.array([], dtype=float)
+        # Initialize beam_spectrum and beam_spectrum_freq as empty arrays
+        self.beam_spectrum = np.array([], dtype=bm.precision.real_t, order='C')
+        self.beam_spectrum_freq = np.array([], dtype=bm.precision.real_t, order='C')
 
         self.total_transfers = 0
         
@@ -430,40 +428,45 @@ class Profile(object):
 
     
     def use_gpu(self):
-        from ..gpu.cpu_gpu_array import CGA
-        from ..gpu.gpu_profile import gpu_Profile
-        if (self.__class__ == gpu_Profile):
-            return 
-        old_slice = self._slice
+        # There has to be a previous call to bm.use_gpu() to enable gpu mode
+        if bm.gpuMode():
 
-        # bin_centers to gpu
-        self.bin_centers_obj = CGA(self.bin_centers)
+            from ..gpu.cpu_gpu_array import CGA
+            from ..gpu.gpu_profile import gpu_Profile
+            if (self.__class__ == gpu_Profile):
+                return 
+            old_slice = self._slice
 
-        # n_macroparticles to gpu
-        self.n_macroparticles_obj = CGA(self.n_macroparticles, dtype2=np.int32)
+            # bin_centers to gpu
+            self.bin_centers_obj = CGA(self.bin_centers)
 
-        # beam_spectrum to gpu
-        self.beam_spectrum_obj = CGA(self.beam_spectrum)
+            # n_macroparticles to gpu
+            self.n_macroparticles_obj = CGA(self.n_macroparticles, dtype2=np.int32)
+            # self.n_macroparticles_obj = CGA(self.n_macroparticles)
 
-        # beam_spectrum_freq to gpu
-        self.beam_spectrum_freq_obj = CGA(self.beam_spectrum_freq)
-        self.__class__ = gpu_Profile
+            # beam_spectrum to gpu
+            self.beam_spectrum_obj = CGA(self.beam_spectrum)
 
-        for i in range(len(self.operations)):
-            if (self.operations[i] == old_slice):
-                self.operations[i] = self._slice
+            # beam_spectrum_freq to gpu
+            self.beam_spectrum_freq_obj = CGA(self.beam_spectrum_freq)
+            self.__class__ = gpu_Profile
 
-        self.dev_n_macroparticles
+            for i in range(len(self.operations)):
+                if (self.operations[i] == old_slice):
+                    self.operations[i] = self._slice
+
+            self.dev_n_macroparticles
         
     def stop_gpu(self):
-        delattr(Profile, "bin_centers") 
-        delattr(Profile, "n_macroparticles") 
-        delattr(Profile, "beam_spectrum") 
-        delattr(Profile, "beam_spectrum_freq") 
-        delattr(Profile, "dev_bin_centers") 
-        delattr(Profile, "dev_n_macroparticles") 
-        delattr(Profile, "dev_beam_spectrum") 
-        delattr(Profile, "dev_beam_spectrum_freq") 
+        if bm.gpuMode():
+            delattr(Profile, "bin_centers") 
+            delattr(Profile, "n_macroparticles") 
+            delattr(Profile, "beam_spectrum") 
+            delattr(Profile, "beam_spectrum_freq") 
+            delattr(Profile, "dev_bin_centers") 
+            delattr(Profile, "dev_n_macroparticles") 
+            delattr(Profile, "dev_beam_spectrum") 
+            delattr(Profile, "dev_beam_spectrum_freq") 
 
     def set_slices_parameters(self):
         self.n_slices, self.cut_left, self.cut_right, self.n_sigma, \
@@ -484,10 +487,10 @@ class Profile(object):
         Constant space slicing with a constant frame.
         """
         bm.slice(self.Beam.dt, self.n_macroparticles, self.cut_left,
-                self.cut_right, self.Beam)
+                self.cut_right)
         
-        if bm.mpiMode():
-            self.reduce_histo()
+        # if bm.mpiMode():
+            # self.reduce_histo()
          
     def reduce_histo(self, dtype=np.uint32):
         if not bm.mpiMode():
@@ -495,8 +498,8 @@ class Profile(object):
                 'ERROR: Cannot use this routine unless in MPI Mode')
 
         from ..utils.mpi_config import worker
-        worker.sync()
         if self.Beam.is_splitted:
+            worker.sync()
 
             with timing.timed_region('serial:conversion'):
                 # with mpiprof.traced_region('serial:conversion'):
@@ -507,7 +510,7 @@ class Profile(object):
 
             with timing.timed_region('serial:conversion'):
                 # with mpiprof.traced_region('serial:conversion'):
-                self.n_macroparticles = self.n_macroparticles.astype(dtype=np.float64, order='C', copy=False)
+                self.n_macroparticles = self.n_macroparticles.astype(dtype=bm.precision.real_t, order='C', copy=False)
 
 
     @timing.timeit(key='serial:scale_histo')

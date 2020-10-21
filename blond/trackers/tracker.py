@@ -275,7 +275,10 @@ class RingAndRFTracker(object):
         self.eta_2 = RFStation.eta_2
         self.alpha_order = RFStation.alpha_order
         self.acceleration_kick = - RFStation.delta_E
-
+        if Profile:
+            self.rf_voltage = np.zeros((Profile.n_slices), dtype=float)
+        else:
+            self.rf_voltage = None
         self.total_transfers = 0
         # Other imports
         self.beam = Beam
@@ -326,20 +329,24 @@ class RingAndRFTracker(object):
 
     
     def use_gpu(self):
-        from ..gpu.gpu_tracker import gpu_RingAndRFTracker
-        
-        self.__class__ = gpu_RingAndRFTracker
-        if (self.profile):
-            self.profile.use_gpu()
-        if (self.totalInducedVoltage != None):
-            self.totalInducedVoltage.use_gpu()
-        if (self.beam != None):
-            self.beam.use_gpu()
-        if (self.beamFB != None):
-            self.beamFB.use_gpu()
-        if (self.rf_params != None):
-            self.rf_params.use_gpu()
-        self.dev_phi_modulation = self.rf_params.dev_phi_modulation
+        # There has to be a previous call to bm.use_gpu() to enable gpu mode
+        if bm.gpuMode():
+            from ..gpu.gpu_tracker import gpu_RingAndRFTracker
+            from ..gpu.cpu_gpu_array import CGA
+            
+            self.rf_voltage_obj = CGA(np.array([]))
+            self.__class__ = gpu_RingAndRFTracker
+            if (self.profile):
+                self.profile.use_gpu()
+            if (self.totalInducedVoltage != None):
+                self.totalInducedVoltage.use_gpu()
+            if (self.beam != None):
+                self.beam.use_gpu()
+            if (self.beamFB != None):
+                self.beamFB.use_gpu()
+            if (self.rf_params != None):
+                self.rf_params.use_gpu()
+            self.dev_phi_modulation = self.rf_params.dev_phi_modulation
 
 
     @timing.timeit(key='comp:kick')
@@ -359,7 +366,7 @@ class RingAndRFTracker(object):
 
         bm.kick(beam_dt, beam_dE, self.voltage[:, index],
                 self.omega_rf[:,index], self.phi_rf[:, index],
-                self.charge, self.n_rf, self.acceleration_kick[index], self.beam)
+                self.charge, self.n_rf, self.acceleration_kick[index])
 
     @timing.timeit(key='comp:drift')
     def drift(self, beam_dt, beam_dE, index):
@@ -390,19 +397,12 @@ class RingAndRFTracker(object):
 
         """
 
-        if (bm.gpuMode()):
-            bm.drift(self.solver, self.t_rev[index],
-                     self.length_ratio, self.alpha_order, self.eta_0[index],
-                     self.eta_1[index], self.eta_2[index], self.alpha_0[index],
-                     self.alpha_1[index], self.alpha_2[index],
-                     self.rf_params.beta[index], self.rf_params.energy[index], self.beam)
-        else:
-            bm.drift(beam_dt, beam_dE, self.solver, self.t_rev[index],
-                     self.length_ratio, self.alpha_order, self.eta_0[index],
-                     self.eta_1[index], self.eta_2[index], self.alpha_0[index],
-                     self.alpha_1[index], self.alpha_2[index],
-                     self.rf_params.beta[index], self.rf_params.energy[index])
-            self.beam.gpu_valid = False
+       
+        bm.drift(beam_dt, beam_dE, self.solver, self.t_rev[index],
+                    self.length_ratio, self.alpha_order, self.eta_0[index],
+                    self.eta_1[index], self.eta_2[index], self.alpha_0[index],
+                    self.alpha_1[index], self.alpha_2[index],
+                    self.rf_params.beta[index], self.rf_params.energy[index])
 
             
     @timing.timeit(key='serial:RFVCalc')
@@ -428,7 +428,7 @@ class RingAndRFTracker(object):
         else:
             self.rf_voltage = bm.rf_volt_comp(voltages, omega_rf, phi_rf,
                                               self.profile.bin_centers)
-        #print("rf voltage mean, std", np.mean(self.rf_voltage), np.std(self.rf_voltage))
+        print("rf voltage mean, std", np.mean(self.rf_voltage), np.std(self.rf_voltage))
 
     def pre_track(self):
         """Tracking method for the section. Applies first the kick, then the 
@@ -443,19 +443,21 @@ class RingAndRFTracker(object):
 
         # Add phase noise directly to the cavity RF phase
         if self.phi_noise is not None:
-            if self.noiseFB is not None:
-                self.phi_rf[:, turn] += \
-                    self.noiseFB.x * self.phi_noise[:, turn]
-            else:
-                self.phi_rf[:, turn] += \
-                    self.phi_noise[:, turn]
+            with timing.timed_region('serial:pretrack_phirf'):
+                if self.noiseFB is not None:
+                    self.phi_rf[:, turn] += \
+                        self.noiseFB.x * self.phi_noise[:, turn]
+                else:
+                    self.phi_rf[:, turn] += \
+                        self.phi_noise[:, turn]
 
         # Add phase modulation directly to the cavity RF phase
         if self.phi_modulation is not None:
-            self.phi_rf[:, turn] += \
-                self.phi_modulation[0][:, turn]
-            self.omega_rf[:, turn] += \
-                self.phi_modulation[1][:, turn]
+            with timing.timed_region('serial:pretrack_phimodulation'):
+                self.phi_rf[:, turn] += \
+                    self.phi_modulation[0][:, turn]
+                self.omega_rf[:, turn] += \
+                    self.phi_modulation[1][:, turn]
 
         # Determine phase loop correction on RF phase and frequency
         if self.beamFB is not None and turn >= self.beamFB.delay:

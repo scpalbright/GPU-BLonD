@@ -62,7 +62,7 @@ class SynchrotronRadiation(object):
 
         # Initialize the random number array if quantum excitation is included
         if quantum_excitation:
-            self.random_array = np.zeros(self.beam.n_macroparticles)
+            self.random_array = np.zeros(self.beam.n_macroparticles, dtype=bm.precision.real_t)
 
         # Displace the beam in phase to account for the energy loss due to
         # synchrotron radiation (temporary until bunch generation is updated)
@@ -89,8 +89,10 @@ class SynchrotronRadiation(object):
                 self.track = self.track_SR_C
 
     def use_gpu(self):
-        from ..gpu.gpu_synchrotron_radiation import update_synch_rad
-        update_synch_rad(self)
+        # There has to be a previous call to bm.use_gpu() to enable gpu mode
+        if bm.gpuMode():
+            from ..gpu.gpu_synchrotron_radiation import update_synch_rad
+            update_synch_rad(self)
 
     # Method to compute the SR parameters
     def calculate_SR_params(self):

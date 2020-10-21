@@ -2,9 +2,13 @@ import numpy as np
 from pycuda import gpuarray
 from  ..utils import bmath as bm   
 
-from pycuda import gpuarray
+# from pycuda import gpuarray
 # from  ..utils import bmath as bm   
 
+try:
+    from pyprof import timing
+except ImportError:
+    from ..utils import profile_mock as timing
 
 class my_gpuarray(gpuarray.GPUArray):
          
@@ -12,7 +16,7 @@ class my_gpuarray(gpuarray.GPUArray):
         self.parent = parent
 
     def __setitem__(self, key, value):
-        p = self.parent
+        # p = self.parent
         self.parent.gpu_validate()
         super().__setitem__(key, value)
         self.parent.cpu_valid = False
@@ -27,7 +31,7 @@ class my_cpuarray(np.ndarray):
 
     def __new__(cls, inputarr, dtype1=None, dtype2=None):
         if (inputarr is None):
-            inputarr = np.array([],dtype=np.float64)
+            inputarr = np.array([], dtype=bm.precision.real_t)
 
         obj = np.asarray(inputarr).view(cls)
         if (dtype1==None):
@@ -50,6 +54,7 @@ class my_cpuarray(np.ndarray):
 
         return obj
   
+    # @timing.timeit(key='serial:cpu_validate')
     def cpu_validate(self):
         
         if (not hasattr(self,"cpu_valid") or not self.cpu_valid):
@@ -57,7 +62,8 @@ class my_cpuarray(np.ndarray):
             dummy = self.dev_array.get().reshape(self.sp).astype(self.dtype1)
             super().__setitem__(slice(None, None, None), dummy)
         self.cpu_valid = True
-            
+    
+    # @timing.timeit(key='serial:gpu_validate')        
     def gpu_validate(self):
         if (not self.gpu_valid):
             self.dev_array.set(gpuarray.to_gpu(self.flatten().astype(self.dtype2)))

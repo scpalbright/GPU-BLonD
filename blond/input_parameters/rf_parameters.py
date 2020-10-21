@@ -247,6 +247,8 @@ class RFStation(object):
         self.alpha_order = Ring.alpha_order
         self.charge = self.Particle.charge
 
+
+
         # The order alpha_order used here can be replaced by Ring.alpha_order
         # when the assembler can differentiate the cases 'simple' and 'exact'
         # for the drift
@@ -265,13 +267,15 @@ class RFStation(object):
                                                       self.n_rf,
                                                       Ring.cycle_time,
                                                       Ring.RingOptions.t_start)
+        self.harmonic = self.harmonic.astype(bm.precision.real_t, order='C', copy=False)
+
         # Reshape design voltage
         self.voltage = RFStationOptions.reshape_data(voltage,
                                                      self.n_turns,
                                                      self.n_rf,
                                                      Ring.cycle_time,
                                                      Ring.RingOptions.t_start)
-        self.voltage = self.voltage.astype(np.float64)
+        self.voltage = self.voltage.astype(bm.precision.real_t, order='C', copy=False)
         # Checking if the RFStation is empty
         if np.sum(self.voltage) == 0:
             self.empty = True
@@ -296,6 +300,9 @@ class RFStation(object):
                 self.n_rf,
                 Ring.cycle_time,
                 Ring.RingOptions.t_start)
+        self.omega_rf_d = self.omega_rf_d.astype(bm.precision.real_t, order='C', copy=False)
+        # print("omega_rf_d[0]: {}".format(self.omega_rf_d[0]))
+
 
         # Reshape phase noise
         if phi_noise is not None:
@@ -305,6 +312,8 @@ class RFStation(object):
                 self.n_rf,
                 Ring.cycle_time,
                 Ring.RingOptions.t_start)
+            self.phi_noise = self.phi_noise.astype(bm.precision.real_t, order='C', copy=False)
+
             
         else:
             self.phi_noise = None
@@ -316,8 +325,8 @@ class RFStation(object):
             except TypeError:
                 phi_modulation = [phi_modulation]
             
-            dPhi = np.zeros([self.n_rf, self.n_turns+1])
-            dOmega = np.zeros([self.n_rf, self.n_turns+1])
+            dPhi = np.zeros([self.n_rf, self.n_turns+1], dtype=bm.precision.real_t)
+            dOmega = np.zeros([self.n_rf, self.n_turns+1], dtype=bm.precision.real_t)
             for pMod in phi_modulation:
                 system = np.where(self.harmonic[:,0] == pMod.harmonic)[0]
                 if len(system) == 0:
@@ -355,9 +364,9 @@ class RFStation(object):
 
         # Copy of the desing rf programs in the one used for tracking
         # and that can be changed by feedbacks
-        self.phi_rf = np.array(self.phi_rf_d).astype(np.float64)
-        self.dphi_rf = np.zeros(self.n_rf).astype(np.float64)
-        self.omega_rf = np.array(self.omega_rf_d).astype(np.float64)
+        self.phi_rf = np.array(self.phi_rf_d).astype(bm.precision.real_t)
+        self.dphi_rf = np.zeros(self.n_rf).astype(bm.precision.real_t)
+        self.omega_rf = np.array(self.omega_rf_d).astype(bm.precision.real_t)
         self.t_rf = 2*np.pi / self.omega_rf
 
         # From helper functions
@@ -396,7 +405,7 @@ class RFStation(object):
 
         # omega_rf_d to gpu
         self.omega_rf_d_obj = CGA(self.omega_rf_d)
-
+        # assert self.omega_rf_d.dtype == bm.precision.real_t
 
         # harmonic to gpu
         self.harmonic_obj = CGA(self.harmonic)
