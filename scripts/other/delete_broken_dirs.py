@@ -12,8 +12,8 @@ parser = argparse.ArgumentParser(description='Delete result directories that fai
 parser.add_argument('-i', '--indir', type=str,
                     help='The directory to look for broken runs.')
 
-parser.add_argument('-a', '--action', type=str, default='print', choices=['rm', 'print'],
-                    help='Remove or only print broken runs.')
+parser.add_argument('-a', '--action', type=str, default='print', choices=['rm', 'print', 'debug'],
+                    help='Remove, only print broken runs or debug (show error files).')
 
 parser.add_argument('-d', '--dontask', action='store_true',
                     help='Do not ask before deleting.')
@@ -48,6 +48,21 @@ if __name__ == '__main__':
                         ans = input('Delete? (Y/N) << ').lower()
                     if ans in ['yes', 'y']:
                         to_remove.append(dirs)
-
+                elif args.action == 'debug':
+                    if args.dontask:
+                        ans = 'y'
+                    else:
+                        ans = input('Show output (Y/N) << ').lower()
+                    if ans in ['yes', 'y']:
+                        # if 'output.txt' in files:
+                        #     out_file = open(dirs + '/output.txt')
+                        #     print('------ Standard Output ---------')
+                        #     print(out_file.read())
+                        #     print('------------ End ---------------')
+                        if 'error.txt' in files:
+                            error_file = open(dirs + '/error.txt')
+                            print('------- Standard Error ---------')
+                            print(error_file.read())
+                            print('------------ End ---------------')
         for directory in to_remove:
             sh.rmtree(directory)

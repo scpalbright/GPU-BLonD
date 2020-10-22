@@ -90,7 +90,8 @@ gconfig = {
     # 'yticks2': [0, 20, 40, 60, 80, 100],
     'outfiles': ['{}/{}-{}.png'],
     'files': [
-        '{}/{}/lb-tp-approx0-weak-scaling/comm-comp-report.csv',
+        '{}/{}/tp-approx0-weak-scaling/comm-comp-report.csv',
+        # '{}/{}/approx0-weak-scaling/comm-comp-report.csv',
         # '{}/{}/lb-tp-approx2-weak-scaling/comm-comp-report.csv',
         # '{}/{}/lb-tp-approx1-weak-scaling/comm-comp-report.csv',
     ],
@@ -212,7 +213,7 @@ if __name__ == '__main__':
             pos += 1 * width
         # pos += width * step
         plt.ylim(gconfig['ylim'])
-        plt.xlim(0-.8*width, len(x)-1.5*width)
+        # plt.xlim(0-.8*width, len(x)-1.5*width)
         plt.xticks(np.arange(len(x)), np.array(x, int)//20)
         if col == 0:
             ax.tick_params(**gconfig['tick_params_left'])
