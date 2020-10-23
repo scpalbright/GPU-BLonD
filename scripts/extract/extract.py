@@ -107,6 +107,8 @@ parser.add_argument('-check-std-cutoff', '--check-std-cutoff', type=float, defau
 parser.add_argument('-check-std-file', '--check-std-file', type=str, default=None,
                     help='File to save the reports, by default print to the std.')
 
+parser.add_argument('-save-prob-files', '--save-prob-files', type=int, default=1,
+                    help='Save files that had issues in an output file')
 
 args = parser.parse_args()
 
@@ -148,7 +150,8 @@ def write_avg(files, outfile, outfile_std, check_std=False):
     for f in files:
         data = np.genfromtxt(f, dtype=str, delimiter='\t', )
         if len(data) <= 1 or len(data.shape) == 1:
-            print('Empty file: ', indir+'/'+f)
+            print('Empty file: ', f)
+            problem_files.add(os.path.dirname(f))
             continue
 
         header, data = data[0], data[1:]
@@ -157,7 +160,8 @@ def write_avg(files, outfile, outfile_std, check_std=False):
         if len(default_header) == 0:
             default_header = header
         elif not np.array_equal(default_header, header):
-            print('Problem with file: ', indir+'/'+f)
+            print('Problem with file: ', f)
+            problem_files.add(os.path.dirname(f))
             continue
 
         for i, f in enumerate(funcs):
@@ -258,7 +262,9 @@ def collect_reports(input, outfile, filename):
             data = np.genfromtxt(os.path.join(dirs, filename),
                                  dtype=str, delimiter='\t')
             if len(data) == 0:
+                problem_files.add(dirs)
                 print('Problem collecting data directory: ', dirs)
+
                 continue
             data_head, data = data[0], data[1:]
             for r in data:
@@ -266,6 +272,7 @@ def collect_reports(input, outfile, filename):
                                 mtw, seed, approx, prec, mpiv, lb, tp,
                                 artdel, gpu] + list(r))
         except:
+            problem_files.add(dirs)
             print('[Error] dir ', dirs)
             continue
     try:
@@ -283,6 +290,7 @@ def collect_reports(input, outfile, filename):
         print(e)
         return -1
 
+problem_files = set()
 
 if __name__ == '__main__':
 
@@ -338,4 +346,11 @@ if __name__ == '__main__':
                     collect_reports(indir,
                                     open(os.path.join(indir, delta_report), 'w'),
                                     delta_average_fname)
+
+    if args.save_prob_files:
+        with open('extract-error-files.txt', 'a') as f:
+            for line in problem_files:
+                f.write(line)
+                f.write('\n')
+
     args.check_std_file.close()

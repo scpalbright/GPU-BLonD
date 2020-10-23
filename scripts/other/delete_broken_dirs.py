@@ -24,11 +24,11 @@ parser.add_argument('-w', '--word', default='Done',
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    to_remove = []
     indirs = glob.glob(args.indir)
     for indir in indirs:
         print('\n------ Processing {} -------'.format(indir))
-        for dirs, subdirs, files in os.walk(args.indir):
+        to_remove = set()
+        for dirs, subdirs, files in os.walk(indir):
             if ('log' not in subdirs) or ('report' not in subdirs):
                 continue
             error_str = None
@@ -36,6 +36,8 @@ if __name__ == '__main__':
                 error_str = 'Dir: {} -- Missing output.txt'.format(dirs)
             elif ('error.txt' in files) and ('DUE TO TIME LIMIT' in open(dirs + '/error.txt').read()):
                 error_str = 'Dir: {} -- Job aborted due to time limit.'.format(dirs)
+            elif len(os.listdir(os.path.join(dirs, 'report'))) == 0:
+                error_str = 'Dir: {} -- No worker report files found.'.format(dirs)
             elif args.word not in open(dirs + '/output.txt').read():
                 error_str = 'Dir: {} -- {} not in output.txt'.format(
                     dirs, args.word)
@@ -47,7 +49,7 @@ if __name__ == '__main__':
                     else:
                         ans = input('Delete? (Y/N) << ').lower()
                     if ans in ['yes', 'y']:
-                        to_remove.append(dirs)
+                        to_remove.add(dirs)
                 elif args.action == 'debug':
                     if args.dontask:
                         ans = 'y'

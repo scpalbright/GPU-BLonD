@@ -22,6 +22,8 @@ extract_script = os.path.join(this_directory, 'extract.py')
 if __name__ == '__main__':
     args = parser.parse_args()
     failed_dirs = []
+    if os.path.isfile('extract-error-files.txt'):
+        os.remove('extract-error-files.txt')
     for case in args.testcases.split(','):
         basedir = os.path.join(args.indir, case)
         if not os.path.isdir(basedir):
