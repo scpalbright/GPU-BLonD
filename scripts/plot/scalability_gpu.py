@@ -50,17 +50,22 @@ gconfig = {
         '2': 'RDS',
     },
     'label': {
+        'double-exact-gpu0': 'cpu',
+        'tp-double-exact-gpu0': 'cpu-tp',
+        # 'double-exact-gpu0': 'base',
         'double-exact-gpu1': 'base',
         'single-exact-gpu1': 'f32',
-        'single-SRP-2-gpu1': 'f32-SRP-2',
+        # 'single-SRP-2-gpu1': 'f32-SRP-2',
         'single-SRP-3-gpu1': 'f32-SRP-3',
         'single-RDS-gpu1': 'f32-RDS',
-        'double-SRP-2-gpu1': 'f64-SRP-2',
-        'double-SRP-3-gpu1': 'f64-SRP-3',
-        'double-RDS-gpu1': 'f64-RDS',
+        # 'double-SRP-2-gpu1': 'f64-SRP-2',
+        # 'double-SRP-3-gpu1': 'f64-SRP-3',
+        # 'double-RDS-gpu1': 'f64-RDS',
     },
     # 'hatches': ['', '', 'xx', '', 'xx', '', 'xx', '', 'xx'],
     'colors': {
+        'cpu': 'xkcd:black',
+        'cpu-tp': 'xkcd:black',
         'base': 'xkcd:blue',
         'f32': 'xkcd:blue',
         'f32-SRP-2': 'xkcd:red',
@@ -71,6 +76,8 @@ gconfig = {
         'f64-RDS': 'xkcd:purple',
     },
     'markers': {
+        'cpu': 'x',
+        'cpu-tp': 'o',
         'base': 'x',
         'f32': 'o',
         'f32-SRP-2': 'x',
@@ -105,7 +112,7 @@ gconfig = {
     'ticks': {'fontsize': 10},
     'fontsize': 10,
     'legend': {
-        'loc': 'lower left', 'ncol': 1, 'handlelength': 1., 'fancybox': True,
+        'loc': 'upper left', 'ncol': 1, 'handlelength': 1., 'fancybox': True,
         'framealpha': 0., 'fontsize': 10, 'labelspacing': 0, 'borderpad': 0.5,
         'handletextpad': 0.5, 'borderaxespad': 0.1, 'columnspacing': 0.8,
         # 'bbox_to_anchor': (0, 1.25)
@@ -129,11 +136,12 @@ gconfig = {
     # 'yticks2': [0, 20, 40, 60, 80, 100],
     'outfiles': ['{}/{}-{}.png'],
     'files': [
-        # '{}/{}/approx0-weak-scaling-gpu-1pn/comm-comp-report.csv',
+        '{}/{}/approx0-weak-scaling/comm-comp-report.csv',
+        '{}/{}/tp-approx0-weak-scaling/comm-comp-report.csv',
         # '{}/{}/approx0-weak-scaling-gpu-2pn/comm-comp-report.csv',
         '{}/{}/exact-timing-gpu/comm-comp-report.csv',
-        '{}/{}/rds-timing-gpu/comm-comp-report.csv',
-        '{}/{}/srp-timing-gpu/comm-comp-report.csv',
+        # '{}/{}/rds-timing-gpu/comm-comp-report.csv',
+        # '{}/{}/srp-timing-gpu/comm-comp-report.csv',
         '{}/{}/float32-timing-gpu/comm-comp-report.csv',
         '{}/{}/f32-rds-timing-gpu/comm-comp-report.csv',
         '{}/{}/f32-srp-timing-gpu/comm-comp-report.csv',
@@ -154,7 +162,16 @@ gconfig = {
         #       '72', '144', '288'],
         # 't': ['5000'],
         'type': ['total'],
-    }
+    },
+    'reference': {
+        'file': '{}/{}/cpu-baseline/comm-comp-report.csv',
+        'lines': {
+            'b': ['12', '21', '18'],
+            'ppb': ['1000000', '1500000'],
+            # 't': ['5000'],
+            'type': ['total'],
+        },
+    }    
 }
 
 plt.rcParams['ps.useafm'] = True
@@ -201,9 +218,22 @@ if __name__ == '__main__':
                     label = f'{prec}-{approx}-{red}-gpu{gpu}'
                 else:
                     label = f'{prec}-{approx}-gpu{gpu}'
+                if 'tp-approx' in file:
+                    label = 'tp-' + label
+                if label not in gconfig['label']:
+                    continue
                 label = gconfig['label'][label]
                 plots_dir[label] = temp[key].copy()
-
+        ref_dir = {}
+        data = np.genfromtxt(gconfig['reference']['file'].format(res_dir, case),
+                             delimiter='\t', dtype=str)
+        header, data = list(data[0]), data[1:]
+        temp = get_plots(header, data, gconfig['reference']['lines'],
+                         exclude=gconfig.get('exclude', []),
+                         prefix=True)
+        for key in temp.keys():
+            ref_dir[case] = temp[key].copy() 
+                   
         plt.grid(True, which='major', alpha=0.5)
         plt.grid(False, which='major', axis='x')
         plt.title('{}'.format(case.upper()), **gconfig['title'])
@@ -216,25 +246,25 @@ if __name__ == '__main__':
                    fontweight='bold',
                    fontsize=gconfig['fontsize'])
 
-        keyref = ''
-        for k in plots_dir.keys():
-            if 'base' == k:
-                keyref = k
-                break
-        if keyref == '':
-            print('ERROR: reference key not found')
-            exit(-1)
-        refvals = plots_dir[keyref]
-        x = get_values(refvals, header, gconfig['x_name'])
-        omp = get_values(refvals, header, gconfig['omp_name'])
-        y = get_values(refvals, header, gconfig['y_name'])
-        parts = get_values(refvals, header, 'ppb')
-        bunches = get_values(refvals, header, 'b')
-        turns = get_values(refvals, header, 't')
-        # This the reference throughput per node
-        yref = parts * bunches * turns / y
-        yref /= (x * omp // 20)
-        yref = yref[list(x).index(4)]
+        # keyref = ''
+        # for k in plots_dir.keys():
+        #     if 'base' == k:
+        #         keyref = k
+        #         break
+        # if keyref == '':
+        #     print('ERROR: reference key not found')
+        #     exit(-1)
+        # refvals = plots_dir[keyref]
+        # x = get_values(refvals, header, gconfig['x_name'])
+        # omp = get_values(refvals, header, gconfig['omp_name'])
+        # y = get_values(refvals, header, gconfig['y_name'])
+        # parts = get_values(refvals, header, 'ppb')
+        # bunches = get_values(refvals, header, 'b')
+        # turns = get_values(refvals, header, 't')
+        # # This the reference throughput per node
+        # yref = parts * bunches * turns / y
+        # yref /= (x * omp // 20)
+        # yref = yref[list(x).index(4)]
 
         pos = 0
         step = 0.1
@@ -256,9 +286,18 @@ if __name__ == '__main__':
 
             # This is the throughput per node
             y = parts * bunches * turns / y
-            y /= (x * omp//20)
+            # y /= (x * omp//20)
+            # speedup = y
 
-            speedup = y
+            # Now the reference, 1thread
+            yref = get_values(ref_dir[case], header, gconfig['y_name'])
+            partsref = get_values(ref_dir[case], header, 'ppb')
+            bunchesref = get_values(ref_dir[case], header, 'b')
+            turnsref = get_values(ref_dir[case], header, 't')
+            ompref = get_values(ref_dir[case], header, gconfig['omp_name'])
+            yref = partsref * bunchesref * turnsref / yref
+
+            speedup = y / yref
             # x_new = []
             # sp_new = []
             # for i, xi in enumerate(gconfig['x_to_keep']):
@@ -272,9 +311,10 @@ if __name__ == '__main__':
             # efficiency = 100 * speedup / (x * omp[0] / ompref)
             x = x * omp[0]
             # speedup = speedup / yref
-            speedup = speedup / speedup[0]
+            # speedup = speedup / speedup[0]
 
-            plt.plot(np.arange(len(x)), speedup,
+            # plt.plot(np.arange(len(x)), speedup,
+            plt.plot(x//20, speedup,
                      label=label, marker=gconfig['markers'][label],
                      color=gconfig['colors'][label])
             # print("{}:{}:".format(case, label), speedup)
@@ -282,7 +322,10 @@ if __name__ == '__main__':
         # pos += width * step
         # plt.ylim(gconfig['ylim'])
         # plt.xlim(0-.8*width, len(x)-1.5*width)
-        plt.xticks(np.arange(len(x)), np.array(x, int)//20)
+        # plt.xticks(np.arange(len(x)), np.array(x, int)//20, **gconfig['ticks'])
+        plt.xticks(x//20, np.array(x, int)//20, **gconfig['ticks'])
+
+        # plt.xticks(np.arange(len(x)), np.array(x, int)//20)
         # if col == 0:
         ax.tick_params(**gconfig['tick_params_left'])
         # else:

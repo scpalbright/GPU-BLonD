@@ -16,14 +16,13 @@ parser = argparse.ArgumentParser(description='Generate the figure of the weak sc
 parser.add_argument('-i', '--inputdir', type=str, default=os.path.join(project_dir, 'results'),
                     help='The directory with the results.')
 
-parser.add_argument('-c', '--cases', type=str, default='lhc,sps,ps',
-                    help='A comma separated list of the testcases to run. Default: lhc,sps,ps')
-
 parser.add_argument('-o', '--outdir', type=str, default=None,
                     help='The directory to store the plots.'
                     'Default: In a plots directory inside the input results directory.')
 
 
+parser.add_argument('-c', '--cases', type=str, default='lhc,sps,ps',
+                    help='A comma separated list of the testcases to run. Default: lhc,sps,ps')
 
 parser.add_argument('-s', '--show', action='store_true',
                     help='Show the plots.')
@@ -50,38 +49,15 @@ gconfig = {
         '2': 'RDS',
     },
     'label': {
-        'double-exact-gpu1': 'base',
-        'single-exact-gpu1': 'f32',
-        'single-SRP-2-gpu1': 'f32-SRP-2',
-        'single-SRP-3-gpu1': 'f32-SRP-3',
-        'single-RDS-gpu1': 'f32-RDS',
-        'double-SRP-2-gpu1': 'f64-SRP-2',
-        'double-SRP-3-gpu1': 'f64-SRP-3',
-        'double-RDS-gpu1': 'f64-RDS',
+        'exact-gpu0-tp0': 'CPU-BASE',
+        'exact-gpu0-tp1': 'CPU-TP',
+        'exact-gpu1-tp0': 'GPU-1PN',
+        'exact-gpu2-tp0': 'GPU-2PN',
+
     },
-    # 'hatches': ['', '', 'xx', '', 'xx', '', 'xx', '', 'xx'],
-    'colors': {
-        'base': 'xkcd:blue',
-        'f32': 'xkcd:blue',
-        'f32-SRP-2': 'xkcd:red',
-        'f32-SRP-3': 'xkcd:red',
-        'f64-SRP-2': 'xkcd:orange',
-        'f64-SRP-3': 'xkcd:orange',
-        'f32-RDS': 'xkcd:purple',
-        'f64-RDS': 'xkcd:purple',
-    },
-    'markers': {
-        'base': 'x',
-        'f32': 'o',
-        'f32-SRP-2': 'x',
-        'f32-SRP-3': 'o',
-        'f64-SRP-2': 'x',
-        'f64-SRP-3': 'o',
-        'f32-RDS': 'x',
-        'f64-RDS': 'o',
-    },
-    # 'colors': ['0.1', '0.3', '0.3', '0.5', '0.5', '0.7', '0.7', '0.95', '0.95'],
-    # 'markers': ['x', 'o', '^'],
+    'hatches': ['', '', 'xx', 'xx'],
+    'markers': ['x', 'o', '^', '+'],
+    'colors': ['0.85', '0.3', '0.85', '0.3'],
     'x_name': 'n',
     # 'x_to_keep': [4, 8, 16, 32, 64],
     'omp_name': 'omp',
@@ -105,7 +81,7 @@ gconfig = {
     'ticks': {'fontsize': 10},
     'fontsize': 10,
     'legend': {
-        'loc': 'lower left', 'ncol': 1, 'handlelength': 1., 'fancybox': True,
+        'loc': 'upper left', 'ncol': 2, 'handlelength': 1., 'fancybox': True,
         'framealpha': 0., 'fontsize': 10, 'labelspacing': 0, 'borderpad': 0.5,
         'handletextpad': 0.5, 'borderaxespad': 0.1, 'columnspacing': 0.8,
         # 'bbox_to_anchor': (0, 1.25)
@@ -129,15 +105,11 @@ gconfig = {
     # 'yticks2': [0, 20, 40, 60, 80, 100],
     'outfiles': ['{}/{}-{}.png'],
     'files': [
-        # '{}/{}/approx0-weak-scaling-gpu-1pn/comm-comp-report.csv',
-        # '{}/{}/approx0-weak-scaling-gpu-2pn/comm-comp-report.csv',
-        '{}/{}/exact-timing-gpu/comm-comp-report.csv',
-        '{}/{}/rds-timing-gpu/comm-comp-report.csv',
-        '{}/{}/srp-timing-gpu/comm-comp-report.csv',
-        '{}/{}/float32-timing-gpu/comm-comp-report.csv',
-        '{}/{}/f32-rds-timing-gpu/comm-comp-report.csv',
-        '{}/{}/f32-srp-timing-gpu/comm-comp-report.csv',
-        # '{}/{}/approx0-weak-scaling-gpu-2pn/comm-comp-report.csv',
+        '{}/{}/tp-approx0-weak-scaling/comm-comp-report.csv',
+        '{}/{}/approx0-weak-scaling/comm-comp-report.csv',
+        '{}/{}/approx0-weak-scaling-gpu-1pn/comm-comp-report.csv',
+        '{}/{}/approx0-weak-scaling-gpu-2pn/comm-comp-report.csv',
+        # '{}/{}/approx0-weak-scaling/comm-comp-report.csv',
         # '{}/{}/lb-tp-approx2-weak-scaling/comm-comp-report.csv',
         # '{}/{}/lb-tp-approx1-weak-scaling/comm-comp-report.csv',
     ],
@@ -145,8 +117,6 @@ gconfig = {
         # 'mpi': ['mpich3', 'mvapich2', 'openmpi3'],
         # 'lb': ['interval', 'reportonly'],
         'approx': ['0', '1', '2'],
-        'prec': ['single', 'double'],
-        'red': ['1', '2', '3'],
         'gpu': ['0', '1', '2'],
         # 'lba': ['500'],
         # 'b': ['6', '12', '24', '96', '192',
@@ -157,6 +127,7 @@ gconfig = {
     }
 }
 
+# Force sans-serif math mode (for axes labels)
 plt.rcParams['ps.useafm'] = True
 plt.rcParams['pdf.use14corefonts'] = True
 plt.rcParams['text.usetex'] = True  # Let TeX do the typsetting
@@ -165,21 +136,21 @@ plt.rcParams['font.family'] = 'sans-serif'  # ... for regular text
 plt.rcParams['font.sans-serif'] = 'Helvetica'
 # 'Helvetica, Avant Garde, Computer Modern Sans serif' # Choose a nice font here
 
-
 # plt.rcParams['font.family'] = gconfig['fontname']
 # plt.rcParams['text.usetex'] = True
 
 
 if __name__ == '__main__':
-    fig, ax_arr = plt.subplots(ncols=len(args.cases), nrows=1,
+    for col, case in enumerate(args.cases):
+        fig, ax = plt.subplots(ncols=1, nrows=1,
                                sharex=True, sharey=True,
                                figsize=gconfig['figsize'])
-    ax_arr = np.atleast_1d(ax_arr)
-    labels = set()
-    for col, case in enumerate(args.cases):
-        print('[{}] tc: {}: {}'.format(this_filename[:-3], case, 'Reading data'))
+        # ax_arr = np.atleast_1d(ax_arr)
+        labels = set()
+        print('[{}] tc: {}: {}'.format(
+            this_filename[:-3], case, 'Reading data'))
 
-        ax = ax_arr[col]
+        # ax = ax_arr[col]
         # ax2 = ax.twinx()
         plt.sca(ax)
         plots_dir = {}
@@ -194,23 +165,25 @@ if __name__ == '__main__':
             for key in temp.keys():
                 approx = key.split('approx')[1].split('_')[0]
                 approx = gconfig['approx'][approx]
-                red = key.split('red')[1].split('_')[0]
-                prec = key.split('prec')[1].split('_')[0]
                 gpu = key.split('gpu')[1].split('_')[0]
-                if approx == 'SRP':
-                    label = f'{prec}-{approx}-{red}-gpu{gpu}'
-                else:
-                    label = f'{prec}-{approx}-gpu{gpu}'
+                tp = '0'
+                if 'tp-approx' in file:
+                    tp = '1'
+                label = f'{approx}-gpu{gpu}-tp{tp}'
                 label = gconfig['label'][label]
                 plots_dir[label] = temp[key].copy()
+                # key = '{}-gpu{}-tp{}'.format(approx, gpu, tp)
+                # label = gconfig['label'][key]
 
         plt.grid(True, which='major', alpha=0.5)
         plt.grid(False, which='major', axis='x')
+        plt.gca().set_axisbelow(True)
+
         plt.title('{}'.format(case.upper()), **gconfig['title'])
         # if col == 1:
-        plt.xlabel(gconfig['xlabel'], labelpad=3,
-                   fontweight='bold',
-                   fontsize=gconfig['fontsize'])
+        #     plt.xlabel(gconfig['xlabel'], labelpad=3,
+        #                fontweight='bold',
+        #                fontsize=gconfig['fontsize'])
         # if col == 0:
         plt.ylabel(gconfig['ylabel'], labelpad=3,
                    fontweight='bold',
@@ -218,7 +191,7 @@ if __name__ == '__main__':
 
         keyref = ''
         for k in plots_dir.keys():
-            if 'base' == k:
+            if k == 'CPU-BASE':
                 keyref = k
                 break
         if keyref == '':
@@ -234,17 +207,24 @@ if __name__ == '__main__':
         # This the reference throughput per node
         yref = parts * bunches * turns / y
         yref /= (x * omp // 20)
-        yref = yref[list(x).index(4)]
+
+        # yref = yref[list(x).index(4)]
 
         pos = 0
-        step = 0.1
+        # step = 0.1
         width = 1. / (1*len(plots_dir.keys())+0.4)
-        print('[{}] tc: {}: {}'.format(this_filename[:-3], case, 'Plotting data'))
+        print('[{}] tc: {}: {}'.format(
+            this_filename[:-3], case, 'Plotting data'))
 
-        for idx, k in enumerate(plots_dir.keys()):
+        for idx, k in enumerate(gconfig['label'].values()):
+            if k not in plots_dir:
+                continue
             values = plots_dir[k]
             # approx = k.split('approx')[1].split('_')[0]
             # approx = gconfig['approx'][approx]
+            # gpu = k.split('gpu')[1].split('_')[0]
+            # tp = k.split('_tp')[1]
+            # key = '{}-gpu{}-tp{}'.format(approx, gpu, tp)
             label = k
 
             x = get_values(values, header, gconfig['x_name'])
@@ -271,26 +251,24 @@ if __name__ == '__main__':
             # speedup = np.array(sp_new)
             # efficiency = 100 * speedup / (x * omp[0] / ompref)
             x = x * omp[0]
-            # speedup = speedup / yref
-            speedup = speedup / speedup[0]
-
-            plt.plot(np.arange(len(x)), speedup,
-                     label=label, marker=gconfig['markers'][label],
-                     color=gconfig['colors'][label])
+            speedup = speedup / yref
+            # speedup = speedup / speedup[0]
+            plt.bar(pos+np.arange(len(x)), speedup, width=0.95*width,
+                    edgecolor='0', label=label, hatch=gconfig['hatches'][idx],
+                    color=gconfig['colors'][idx])
+            # plt.plot(np.arange(len(x)), speedup,
+            #          label=label, marker=gconfig['markers'][idx],
+            #          color=gconfig['colors'][idx])
             # print("{}:{}:".format(case, label), speedup)
             pos += 1 * width
         # pos += width * step
-        # plt.ylim(gconfig['ylim'])
         # plt.xlim(0-.8*width, len(x)-1.5*width)
-        plt.xticks(np.arange(len(x)), np.array(x, int)//20)
-        # if col == 0:
-        ax.tick_params(**gconfig['tick_params_left'])
-        # else:
-        #     ax.tick_params(**gconfig['tick_params_center_right'])
 
+        plt.xticks((pos-width)/2 + np.arange(len(x)), np.array(x, int)//20, **gconfig['ticks'])
+        ax.tick_params(**gconfig['tick_params_left'])
         plt.legend(**gconfig['legend'])
 
-        plt.xticks(**gconfig['ticks'])
+        # plt.ylim(gconfig['ylim'])
         # plt.yticks(gconfig['yticks'], **gconfig['ticks'])
 
     plt.tight_layout()
