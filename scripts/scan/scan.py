@@ -200,7 +200,7 @@ if __name__ == '__main__':
                         # Calculate the number of jobs currently running
                         jobs = subprocess.run(
                             'squeue -u $USER | wc -l', shell=True,
-                            stdou=subprocess.PIPE).stdout.decode('utf-8').strip()
+                            stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
                         jobs = int(jobs) - 1
                         # While the number of jobs in the queue are more
                         # or equal to the jobs limit, wait for a minute and repeat
@@ -208,7 +208,7 @@ if __name__ == '__main__':
                             time.sleep(60)
                             jobs = subprocess.run(
                                 'squeue -u $USER | wc -l', shell=True,
-                                stdou=subprocess.PIPE).stdout.decode('utf-8').strip()
+                                stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
                             jobs = int(jobs) - 1
 
                     subprocess.call(all_args,
