@@ -6,7 +6,7 @@ import random
 import yaml
 import argparse
 import numpy as np
-import time
+from time import sleep
 import common
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
@@ -205,7 +205,7 @@ if __name__ == '__main__':
                         # While the number of jobs in the queue are more
                         # or equal to the jobs limit, wait for a minute and repeat
                         while jobs >= args.limit:
-                            time.sleep(60)
+                            sleep(60)
                             jobs = subprocess.run(
                                 'squeue -u $USER | wc -l', shell=True,
                                 stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
