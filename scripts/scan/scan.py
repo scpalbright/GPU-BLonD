@@ -6,7 +6,7 @@ import random
 import yaml
 import argparse
 import numpy as np
-
+import time
 import common
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
@@ -23,6 +23,9 @@ parser.add_argument('-t', '--testcases', type=str, default=['lhc,sps,ps'],
 
 parser.add_argument('-o', '--output', type=str, default='./results/local',
                     help='Output directory to store the output data. Default: ./results/local')
+
+parser.add_argument('-l', '--limit', type=int, default=0,
+                    help='Limit the number of concurrent jobs queueing. Default: 0 (No Limit)')
 
 
 if __name__ == '__main__':
@@ -84,17 +87,17 @@ if __name__ == '__main__':
             precs = config['precision']
             artdels = config['artificialdelay']
             gpus = config['gpu']
-            
+
             nodes = config.get('nodes', [0]*len(ps))
 
             for (N, p, b, s, t, r, w, o, time,
                  mtw, m, seed, exe, approx,
-                 timing, mpi, log, lb, #lba,
+                 timing, mpi, log, lb,  # lba,
                  tp, prec, reps, artdel, gpu) in zip(nodes, ps, bs, ss, ts, rs, ws,
-                                                oss, times, mtws, ms, seeds,
-                                                exes, approxs, timings, mpis,
-                                                logs, lbs, tps, precs,
-                                                repeats, artdels, gpus):
+                                                     oss, times, mtws, ms, seeds,
+                                                     exes, approxs, timings, mpis,
+                                                     logs, lbs, tps, precs,
+                                                     repeats, artdels, gpus):
                 if N == 0:
                     N = int(max(np.ceil(w * o / common.cores_per_cpu), 1))
 
@@ -193,6 +196,21 @@ if __name__ == '__main__':
                     all_args = ' '.join(all_args)
                     print(all_args, file=analysis_file)
 
+                    if args.limit > 0 and args.environment == 'slurm':
+                        # Calculate the number of jobs currently running
+                        jobs = subprocess.run(
+                            'squeue -u $USER | wc -l', shell=True,
+                            stdou=subprocess.PIPE).stdout.decode('utf-8').strip()
+                        jobs = int(jobs) - 1
+                        # While the number of jobs in the queue are more
+                        # or equal to the jobs limit, wait for a minute and repeat
+                        while jobs >= args.limit:
+                            time.sleep(60)
+                            jobs = subprocess.run(
+                                'squeue -u $USER | wc -l', shell=True,
+                                stdou=subprocess.PIPE).stdout.decode('utf-8').strip()
+                            jobs = int(jobs) - 1
+
                     subprocess.call(all_args,
                                     shell=True,
                                     stdout=open(output, 'w'),
@@ -201,7 +219,7 @@ if __name__ == '__main__':
 
                     # sleep(5)
                     current_sim += 1
-                    print("%lf %% is completed" % (100.0 * current_sim
-                                                   / total_sims))
+                    print("%lf %% is completed" % (100.0 * current_sim /
+                                                   total_sims))
 
                     analysis_file.close()
