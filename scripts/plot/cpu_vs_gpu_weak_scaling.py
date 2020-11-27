@@ -81,10 +81,10 @@ gconfig = {
     'ticks': {'fontsize': 10},
     'fontsize': 10,
     'legend': {
-        'loc': 'upper left', 'ncol': 2, 'handlelength': 1., 'fancybox': True,
-        'framealpha': 0., 'fontsize': 10, 'labelspacing': 0, 'borderpad': 0.5,
+        'loc': 'upper left', 'ncol': 4, 'handlelength': 1., 'fancybox': True,
+        'framealpha': 0., 'fontsize': 9, 'labelspacing': 0, 'borderpad': 0.5,
         'handletextpad': 0.5, 'borderaxespad': 0.1, 'columnspacing': 0.8,
-        # 'bbox_to_anchor': (0, 1.25)
+        'bbox_to_anchor': (0, 1.15),
     },
     'subplots_adjust': {
         'wspace': 0.0, 'hspace': 0.1, 'top': 0.93
@@ -257,6 +257,14 @@ if __name__ == '__main__':
             plt.bar(pos+np.arange(len(x)), speedup, width=0.95*width,
                     edgecolor='0', label=label, hatch=gconfig['hatches'][idx],
                     color=gconfig['colors'][idx])
+            
+            if 'TP' in label:
+                for i in np.arange(len(speedup)):
+                    # if speedup[i] > 0.9:
+                    #     continue
+                    ax.annotate('{:.2f}'.format(speedup[i]),
+                                xy=(pos+i, speedup[i]),
+                                rotation='90', **gconfig['annotate'])
             # plt.plot(np.arange(len(x)), speedup,
             #          label=label, marker=gconfig['markers'][idx],
             #          color=gconfig['colors'][idx])

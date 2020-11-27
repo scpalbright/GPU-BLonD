@@ -71,14 +71,14 @@ gconfig = {
         'f64-RDS': 'xkcd:purple',
     },
     'markers': {
-        'base': 'x',
-        'f32': 'o',
-        'f32-SRP-2': 'x',
-        'f32-SRP-3': 'o',
+        'base': 'o',
+        'f32': '^',
+        'f32-SRP-2': '^',
+        'f32-SRP-3': '^',
         'f64-SRP-2': 'x',
-        'f64-SRP-3': 'o',
-        'f32-RDS': 'x',
-        'f64-RDS': 'o',
+        'f64-SRP-3': 'x',
+        'f32-RDS': '^',
+        'f64-RDS': 'x',
     },
     # 'colors': ['0.1', '0.3', '0.3', '0.5', '0.5', '0.7', '0.7', '0.95', '0.95'],
     # 'markers': ['x', 'o', '^'],
@@ -86,7 +86,7 @@ gconfig = {
     # 'x_to_keep': [4, 8, 16, 32, 64],
     'omp_name': 'omp',
     'y_name': 'avg_time(sec)',
-    'xlabel': 'Nodes (x20 Cores)',
+    'xlabel': 'Nodes (x20 Cores/ x1 GPU)',
     'ylabel': 'Norm. Throughput',
     'title': {
                 # 's': '{}'.format(case.upper()),
@@ -105,7 +105,7 @@ gconfig = {
     'ticks': {'fontsize': 10},
     'fontsize': 10,
     'legend': {
-        'loc': 'lower left', 'ncol': 1, 'handlelength': 1., 'fancybox': True,
+        'loc': 'lower left', 'ncol': 2, 'handlelength': 1., 'fancybox': True,
         'framealpha': 0., 'fontsize': 10, 'labelspacing': 0, 'borderpad': 0.5,
         'handletextpad': 0.5, 'borderaxespad': 0.1, 'columnspacing': 0.8,
         # 'bbox_to_anchor': (0, 1.25)
@@ -123,10 +123,10 @@ gconfig = {
     },
     'fontname': 'DejaVu Sans Mono',
 
-    'ylim': [0., 1.1],
+    'ylim': [0.4, 1.05],
     # 'ylim2': [0, 110],
-    'yticks': [0, 0.2, 0.4, 0.6, 0.8, 1.0],
     # 'yticks2': [0, 20, 40, 60, 80, 100],
+    'yticks': [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
     'outfiles': ['{}/{}-{}.png'],
     'files': [
         # '{}/{}/approx0-weak-scaling-gpu-1pn/comm-comp-report.csv',
@@ -146,7 +146,7 @@ gconfig = {
         # 'lb': ['interval', 'reportonly'],
         'approx': ['0', '1', '2'],
         'prec': ['single', 'double'],
-        'red': ['1', '2', '3'],
+        'red': ['1', '3'],
         'gpu': ['0', '1', '2'],
         # 'lba': ['500'],
         # 'b': ['6', '12', '24', '96', '192',
@@ -280,18 +280,14 @@ if __name__ == '__main__':
             # print("{}:{}:".format(case, label), speedup)
             pos += 1 * width
         # pos += width * step
-        # plt.ylim(gconfig['ylim'])
         # plt.xlim(0-.8*width, len(x)-1.5*width)
-        plt.xticks(np.arange(len(x)), np.array(x, int)//20)
-        # if col == 0:
+        plt.xticks(np.arange(len(x)), np.array(x, int)//20, **gconfig['ticks'])
         ax.tick_params(**gconfig['tick_params_left'])
-        # else:
-        #     ax.tick_params(**gconfig['tick_params_center_right'])
 
         plt.legend(**gconfig['legend'])
 
-        plt.xticks(**gconfig['ticks'])
-        # plt.yticks(gconfig['yticks'], **gconfig['ticks'])
+        plt.ylim(gconfig['ylim'])
+        plt.yticks(gconfig['yticks'], **gconfig['ticks'])
 
     plt.tight_layout()
     plt.subplots_adjust(**gconfig['subplots_adjust'])

@@ -50,10 +50,10 @@ gconfig = {
         '2': 'RDS',
     },
     'label': {
-        'double-exact-gpu0': 'cpu',
-        'tp-double-exact-gpu0': 'cpu-tp',
+        'double-exact-gpu0': 'f64-cpu',
+        'tp-double-exact-gpu0': 'f64-cpu-tp',
         # 'double-exact-gpu0': 'base',
-        'double-exact-gpu1': 'base',
+        'double-exact-gpu1': 'f64-gpu',
         'single-exact-gpu1': 'f32',
         # 'single-SRP-2-gpu1': 'f32-SRP-2',
         'single-SRP-3-gpu1': 'f32-SRP-3',
@@ -64,9 +64,9 @@ gconfig = {
     },
     # 'hatches': ['', '', 'xx', '', 'xx', '', 'xx', '', 'xx'],
     'colors': {
-        'cpu': 'xkcd:black',
-        'cpu-tp': 'xkcd:black',
-        'base': 'xkcd:blue',
+        'f64-cpu': 'xkcd:black',
+        'f64-cpu-tp': 'xkcd:black',
+        'f64-gpu': 'xkcd:blue',
         'f32': 'xkcd:blue',
         'f32-SRP-2': 'xkcd:red',
         'f32-SRP-3': 'xkcd:red',
@@ -76,9 +76,9 @@ gconfig = {
         'f64-RDS': 'xkcd:purple',
     },
     'markers': {
-        'cpu': 'x',
-        'cpu-tp': 'o',
-        'base': 'x',
+        'f64-cpu': 'x',
+        'f64-cpu-tp': 'o',
+        'f64-gpu': 'x',
         'f32': 'o',
         'f32-SRP-2': 'x',
         'f32-SRP-3': 'o',
@@ -104,9 +104,9 @@ gconfig = {
     },
     'figsize': [5, 2.],
     'annotate': {
-        'fontsize': 9,
+        'fontsize': 10,
         'textcoords': 'data',
-        'va': 'bottom',
+        # 'va': 'bottom',
         'ha': 'center'
     },
     'ticks': {'fontsize': 10},
@@ -318,6 +318,16 @@ if __name__ == '__main__':
                      label=label, marker=gconfig['markers'][label],
                      color=gconfig['colors'][label])
             # print("{}:{}:".format(case, label), speedup)
+            # for i in np.arange(len(speedup)):
+                # if speedup[i] > 0.9:
+                #     continue
+            if label=='f64-cpu' or label=='f32-RDS':
+                va = 'top'
+            else:
+                va = 'bottom'
+            ax.annotate('{:.1f}'.format(speedup[-1]),
+                        xy=((x[-1])//20, speedup[-1]), va = va,
+                        rotation='0', **gconfig['annotate'])
             pos += 1 * width
         # pos += width * step
         # plt.ylim(gconfig['ylim'])
