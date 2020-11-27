@@ -107,8 +107,9 @@ gconfig = {
     'files': [
         '{}/{}/tp-approx0-weak-scaling/comm-comp-report.csv',
         '{}/{}/approx0-weak-scaling/comm-comp-report.csv',
-        '{}/{}/approx0-weak-scaling-gpu-1pn/comm-comp-report.csv',
-        '{}/{}/approx0-weak-scaling-gpu-2pn/comm-comp-report.csv',
+        '{}/{}/exact-timing-gpu/comm-comp-report.csv',
+        # '{}/{}/approx0-weak-scaling-gpu-1pn/comm-comp-report.csv',
+        # '{}/{}/approx0-weak-scaling-gpu-2pn/comm-comp-report.csv',
         # '{}/{}/approx0-weak-scaling/comm-comp-report.csv',
         # '{}/{}/lb-tp-approx2-weak-scaling/comm-comp-report.csv',
         # '{}/{}/lb-tp-approx1-weak-scaling/comm-comp-report.csv',

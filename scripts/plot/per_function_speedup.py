@@ -112,10 +112,10 @@ gconfig = {
     ],
     'files': [
         '{}/{}/exact-timing-gpu/avg-report.csv',
-        # '{}/{}/rds-timing-gpu/avg-report.csv',
-        # '{}/{}/srp-timing-gpu/avg-report.csv',
+        '{}/{}/rds-timing-gpu/avg-report.csv',
+        '{}/{}/srp-timing-gpu/avg-report.csv',
         '{}/{}/float32-timing-gpu/avg-report.csv',
-        # '{}/{}/f32-rds-timing-gpu/avg-report.csv',
+        '{}/{}/f32-rds-timing-gpu/avg-report.csv',
         # '{}/{}/lb-tp-approx1-strong-scaling/comm-comp-report.csv',
     ],
     'lines': {
