@@ -137,7 +137,6 @@ gconfig = {
         '{}/{}/float32-timing-gpu/comm-comp-report.csv',
         '{}/{}/f32-rds-timing-gpu/comm-comp-report.csv',
         '{}/{}/f32-srp-timing-gpu/comm-comp-report.csv',
-        # '{}/{}/approx0-weak-scaling-gpu-2pn/comm-comp-report.csv',
         # '{}/{}/lb-tp-approx2-weak-scaling/comm-comp-report.csv',
         # '{}/{}/lb-tp-approx1-weak-scaling/comm-comp-report.csv',
     ],
