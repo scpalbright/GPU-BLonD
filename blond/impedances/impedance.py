@@ -125,7 +125,6 @@ class TotalInducedVoltage(object):
 
         self.induced_voltage = temp_induced_voltage.astype(
             dtype=bm.precision.real_t, order='C', copy=False)
-        # print("total induced_voltage: {} {}".format(np.mean(self.induced_voltage), np.std(self.induced_voltage)))
 
     # Can be faster than the normal induced voltage sum
     def induced_voltage_sum_packed(self):
@@ -139,7 +138,7 @@ class TotalInducedVoltage(object):
         beam_spectrum = self.induced_voltage_list[0].profile.beam_spectrum
 
         with timing.timed_region('serial:ind_volt_sum_packed'):
-            with mpiprof.traced_region('serial:ind_volt_sum_packed'):
+            # with mpiprof.traced_region('serial:ind_volt_sum_packed'):
                 self.induced_voltage = []
                 min_idx = self.profile.n_slices
                 for obj in self.induced_voltage_list:
@@ -382,19 +381,12 @@ class _InducedVoltage(object):
         Method to calculate the induced voltage at the current turn. DFTs are 
         used for calculations in time and frequency domain (see classes below)
         """
-        # if induced_voltage_1turn.last_turn < self.RFParams.counter[0]:
-        # induced_voltage_1turn.last_turn = self.RFParams.counter[0]
-        # print('Inside induced_voltage_1turn')
         if self.n_fft not in beam_spectrum_dict:
-            # print('Before calling beam_spectrum_generation')
-
             self.profile.beam_spectrum_generation(self.n_fft)
             beam_spectrum_dict[self.n_fft] = self.profile.beam_spectrum
 
-        # print('After beam spectrum')
 
         beam_spectrum = beam_spectrum_dict[self.n_fft]
-        # print("beam_spectrum: {} {}".format(np.mean(beam_spectrum, np.std(beam_spectrum))))
 
         with timing.timed_region('serial:indVolt1Turn'):
             # with mpiprof.traced_region('serial:indVolt1Turn'):
@@ -404,7 +396,6 @@ class _InducedVoltage(object):
         self.induced_voltage = induced_voltage[:self.n_induced_voltage].astype(
             dtype=bm.precision.real_t, order='C', copy=False)
 
-        # print("induced_voltage: {} {}".format(np.mean(self.induced_voltage, np.std(self.induced_voltage))))
 
 
     def induced_voltage_mtw(self, beam_spectrum_dict={}):

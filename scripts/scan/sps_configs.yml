@@ -5,16 +5,14 @@ slurm:
         
         # CPU only experiments
         # Strong scaling
-        # - 'approx0-strong-scaling'
-        # - 'tp-approx0-strong-scaling'
+        - 'approx0-strong-scaling'
+        - 'tp-approx0-strong-scaling'
         # - 'lb-tp-approx0-strong-scaling'
-        # - 'lb-tp-approx1-strong-scaling'
-        # - 'lb-tp-approx2-strong-scaling'
         
         # Weak Scaling
         # - 'lb-tp-approx0-weak-scaling'
-        # - 'approx0-weak-scaling'
-        # - 'tp-approx0-weak-scaling'
+        - 'approx0-weak-scaling'
+        - 'tp-approx0-weak-scaling'
         # - 'lb-tp-approx0-weak-scaling'
 
         # - 'lb-tp-approx1-weak-scaling'
@@ -38,24 +36,371 @@ slurm:
         # 'approx0-openmpi3-impl'
 
         # GPU only experiments
-        # - 'approx0-weak-scaling-gpu'
+        - 'approx0-weak-scaling-gpu-1pn'
+        - 'approx0-weak-scaling-gpu-2pn'
         # - 'tp-approx0-weak-scaling-gpu'
+
+        - 'approx0-strong-scaling-gpu-1pn'
+        - 'approx0-strong-scaling-gpu-2pn'
+        # - 'tp-approx0-strong-scaling-gpu'
+
         # - 'lb-tp-approx0-weak-scaling-gpu'
 
 
         # CPU-GPU experiments 
         # - 'approx0-weak-scaling-cpu-gpu'
         # - 'tp-approx0-weak-scaling-cpu-gpu'
-        - 'lb-tp-approx0-weak-scaling-cpu-gpu'
-        - 'lb-approx0-weak-scaling-cpu-gpu'
+        # - 'lb-tp-approx0-weak-scaling-cpu-gpu'
+        # - 'lb-approx0-weak-scaling-cpu-gpu'
+        
+        # Approximate 
+        - 'srp-timing-gpu'
+        - 'rds-timing-gpu'
+        - 'exact-timing-gpu'
+        - 'float32-timing-gpu'
+        - 'f32-srp-timing-gpu'
+        - 'f32-rds-timing-gpu'
+
+        # - f32-rds-monitor
+        # - f32-srp-monitor
+        # - exact-monitor
+        # - srp-monitor
+        # - rds-monitor
+        # - f32-monitor
 
     configs: {
+
+        # Approximate 
+        
+        'f32-srp-timing-gpu': {
+            'exe': ['SPS_main.py'],
+            'particles': [3000000],
+            'bunches': [18, 72],  # 192
+
+            'slices': [1408],
+            'turns': [10000],
+            'monitor': [0],
+            'seed': [0],
+            'mtw': [0],
+            'precision': ['single'],
+            'withtp': [0],
+            'reduce': [2, 2, 3, 3],
+            'approx': [1],
+            'log': [1],
+            'loadbalance': ['reportonly,,,,'],
+            'artificialdelay': ['off'],
+            'timing': ['timing'],
+            'gpu': [1],
+            'workers': [1, 4],
+            'omp': [20],
+            'mpi': ['openmpi4'],
+            'time': [60],
+            'repeats': 2
+        },
+
+        'f32-rds-timing-gpu': {
+            'exe': ['SPS_main.py'],
+
+            'particles': [3000000],
+            'bunches': [18, 72],  # 192
+
+            'slices': [1408],
+            'turns': [10000],
+            'monitor': [0],
+            'seed': [0],
+            'mtw': [0],
+            'precision': ['single'],
+            'withtp': [0],
+            'reduce': [1],
+            'approx': [2],
+            'log': [1],
+            'loadbalance': ['reportonly,,,,'],
+            'artificialdelay': ['off'],
+            'timing': ['timing'],
+            'gpu': [1],
+            'workers': [1, 4],
+            'omp': [20],
+            'mpi': ['openmpi4'],
+            'time': [60],
+            'repeats': 2
+        },
+
+
+
+        'srp-timing-gpu': {
+            'exe': ['SPS_main.py'],
+
+            'particles': [3000000],
+            'bunches': [18, 72],  # 192
+
+            'slices': [1408],
+            'turns': [10000],
+            'monitor': [0],
+            'seed': [0],
+            'mtw': [0],
+            'precision': ['double'],
+            'withtp': [0],
+            'reduce': [2, 2, 3, 3],
+            'approx': [1],
+            'log': [1],
+            'loadbalance': ['reportonly,,,,'],
+            'artificialdelay': ['off'],
+            'timing': ['timing'],
+            'gpu': [1],
+            'workers': [1, 4],
+            'omp': [20],
+            'mpi': ['openmpi4'],
+            'time': [60],
+            'repeats': 2
+        },
+
+        'rds-timing-gpu': {
+            'exe': ['SPS_main.py'],
+
+            'particles': [3000000],
+            'bunches': [18, 72],  # 192
+
+            'slices': [1408],
+            'turns': [10000],
+            'monitor': [0],
+            'seed': [0],
+            'mtw': [0],
+            'precision': ['double'],
+            'withtp': [0],
+            'reduce': [1],
+            'approx': [2],
+            'log': [1],
+            'loadbalance': ['reportonly,,,,'],
+            'artificialdelay': ['off'],
+            'timing': ['timing'],
+            'gpu': [1],
+            'workers': [1, 4],
+            'omp': [20],
+            'mpi': ['openmpi4'],
+            'time': [60],
+            'repeats': 2
+        },
+
+        'exact-timing-gpu': {
+            'exe': ['SPS_main.py'],
+
+            'particles': [3000000],
+            'bunches': [18, 72],  # 192
+
+            'slices': [1408],
+            'turns': [10000],
+            'monitor': [0],
+            'seed': [0],
+            'mtw': [0],
+            'precision': ['double'],
+            'withtp': [0],
+            'reduce': [1],
+            'approx': [0],
+            'log': [1],
+            'loadbalance': ['reportonly,,,,'],
+            'artificialdelay': ['off'],
+            'timing': ['timing'],
+            'gpu': [1],
+            'workers': [1, 4],
+            'omp': [20],
+            'mpi': ['openmpi4'],
+            'time': [60],
+            'repeats': 2
+        },
+
+
+        'float32-timing-gpu': {
+            'exe': ['SPS_main.py'],
+
+            'particles': [3000000],
+            'bunches': [18, 72],  # 192
+
+            'slices': [1408],
+            'turns': [10000],
+            'monitor': [0],
+            'seed': [0],
+            'mtw': [0],
+            'precision': ['single'],
+            'withtp': [0],
+            'reduce': [1],
+            'approx': [0],
+            'log': [1],
+            'loadbalance': ['reportonly,,,,'],
+            'artificialdelay': ['off'],
+            'timing': ['timing'],
+            'gpu': [1],
+            'workers': [1, 4],
+            'omp': [20],
+            'mpi': ['openmpi4'],
+            'time': [60],
+            'repeats': 2
+        },
+
+
+        # Monitors
+        'f32-srp-monitor': {
+            'exe': ['SPS_main.py'],
+            'particles': [4000000],
+            'bunches': [1],  # 192
+
+            'slices': [1408],
+            'turns': [40000],
+            'monitor': [100],
+            'seed': [0],
+            'mtw': [0],
+            'precision': ['single'],
+            'withtp': [0],
+            'reduce': [2, 3, 4],
+            'approx': [1],
+            'log': [1],
+            'loadbalance': ['reportonly,,,,'],
+            'artificialdelay': ['off'],
+            'timing': ['timing'],
+            'gpu': [1],
+            'workers': [1],
+            'omp': [10],
+            'mpi': ['openmpi4'],
+            'time': [120],
+            'repeats': 1
+        },
+
+        'f32-rds-monitor': {
+            'exe': ['SPS_main.py'],
+            'particles': [4000000],
+            'bunches': [1],  # 192
+
+            'slices': [1408],
+            'turns': [40000],
+            'monitor': [0],
+            'seed': [0],
+            'mtw': [0],
+            'precision': ['single'],
+            'withtp': [0],
+            'reduce': [1],
+            'approx': [2],
+            'log': [1],
+            'loadbalance': ['reportonly,,,,'],
+            'artificialdelay': ['off'],
+            'timing': ['timing'],
+            'gpu': [2],
+            'workers': [2, 4, 8],
+            'omp': [10],
+            'mpi': ['openmpi4'],
+            'time': [120],
+            'repeats': 1
+        },
+
+        'srp-monitor': {
+            'exe': ['SPS_main.py'],
+            'particles': [4000000],
+            'bunches': [1],  # 192
+            'slices': [1408],
+            'turns': [40000],
+            'monitor': [0],
+            'seed': [0],
+            'mtw': [0],
+            'precision': ['double'],
+            'withtp': [0],
+            'reduce': [2, 3, 4],
+            'approx': [1],
+            'log': [1],
+            'loadbalance': ['reportonly,,,,'],
+            'artificialdelay': ['off'],
+            'timing': ['timing'],
+            'gpu': [1],
+            'workers': [1],
+            # 'nodes': 
+            # 'workers': [32, 64],
+            'omp': [10],
+            'mpi': ['openmpi4'],
+            'time': [120],
+            'repeats': 1
+        },
+
+        'rds-monitor': {
+            'exe': ['SPS_main.py'],
+            'particles': [4000000],
+            'bunches': [1],  # 192
+            'slices': [1408],
+            'turns': [40000],
+            'monitor': [0],
+            'seed': [0],
+            'mtw': [0],
+            'precision': ['double'],
+            'withtp': [0],
+            'reduce': [1],
+            'approx': [2],
+            'log': [1],
+            'loadbalance': ['reportonly,,,,'],
+            'artificialdelay': ['off'],
+            # 'gpu': [0],
+            'timing': ['timing'],
+            'gpu': [2],
+            'workers': [2, 4, 8],
+            'omp': [10],
+            'mpi': ['openmpi4'],
+            'time': [120],
+            'repeats': 1
+        },
+
+
+        'exact-monitor': {
+            'exe': ['SPS_main.py'],
+            'particles': [4000000],
+            'bunches': [1],  # 192
+            'slices': [1408],
+            'turns': [40000],
+            'monitor': [0],
+            'seed': [0, 1, 2],
+            'mtw': [0],
+            'precision': ['double'],
+            'withtp': [0],
+            'reduce': [1],
+            'approx': [0],
+            'log': [1],
+            'loadbalance': ['reportonly,,,,'],
+            'artificialdelay': ['off'],
+            'timing': ['timing'],
+            'gpu': [1],
+            'workers': [1],
+            'omp': [10],
+            'mpi': ['openmpi4'],
+            'time': [120],
+            'repeats': 1
+        },
+
+        'f32-monitor': {
+            'exe': ['SPS_main.py'],
+            'particles': [4000000],
+            'bunches': [1],  # 192
+            'slices': [1408],
+            'turns': [40000],
+            'monitor': [0],
+            'seed': [0],
+            'mtw': [0],
+            'precision': ['single'],
+            'withtp': [0],
+            'reduce': [1],
+            'approx': [0],
+            'log': [1],
+            'loadbalance': ['reportonly,,,,'],
+            'artificialdelay': ['off'],
+            'timing': ['timing'],
+            'gpu': [1],
+            'workers': [1],
+            'omp': [10],
+            'mpi': ['openmpi4'],
+            'time': [120],
+            'repeats': 1
+        },
+
+
         # Strong scaling
         'lb-tp-approx0-strong-scaling': {
             'exe': ['SPS_main.py'],
             'particles': [2000000],
             'bunches': [72],  # 192
-            'slices': [1000],
+            'slices': [1408],
             'turns': [10000],
             'monitor': [0],
             'seed': [0],
@@ -78,9 +423,10 @@ slurm:
 
         'tp-approx0-strong-scaling': {
             'exe': ['SPS_main.py'],
-            'particles': [2000000],
-            'bunches': [72],  # 192
-            'slices': [1000],
+            'particles': [3000000],
+            'bunches': [288],  # 192
+
+            'slices': [1408],
             'turns': [10000],
             'monitor': [0],
             'seed': [0],
@@ -93,19 +439,19 @@ slurm:
             'artificialdelay': ['off'],
             'precision': ['double'],
             'timing': ['timing'],
-            'gpu': ['0'],
-            'workers': [2, 4, 8, 16],
+            'gpu': [0],
+            'workers': [2, 4, 8, 16, 32],
             'omp': [10],
             'mpi': ['openmpi4'],
-            'time': [60],
-            'repeats': 4
+            'time': [90],
+            'repeats': 2
         },
 
         'approx0-strong-scaling': {
             'exe': ['SPS_main.py'],
-            'particles': [2000000],
-            'bunches': [72],  # 192
-            'slices': [1000],
+            'particles': [3000000],
+            'bunches': [288],  # 192
+            'slices': [1408],
             'turns': [10000],
             'monitor': [0],
             'seed': [0],
@@ -118,12 +464,12 @@ slurm:
             'artificialdelay': ['off'],
             'precision': ['double'],
             'timing': ['timing'],
-            'gpu': ['0'],
-            'workers': [2, 4, 8, 16],
+            'gpu': [0],
+            'workers': [2, 4, 8, 16, 32],
             'omp': [10],
             'mpi': ['openmpi4'],
-            'time': [60],
-            'repeats': 4
+            'time': [90],
+            'repeats': 2
         },
 
 
@@ -132,7 +478,7 @@ slurm:
             'exe': ['SPS_main.py'],
             'particles': [500000, 1000000, 1000000], # 2000000],
             'bunches': [36, 36, 72], #72],
-            'slices': [1000],
+            'slices': [1408],
             'turns': [10000],
             'monitor': [0],
             'seed': [0],
@@ -155,9 +501,9 @@ slurm:
 
         'tp-approx0-weak-scaling': {
             'exe': ['SPS_main.py'],
-            'particles': [500000, 1000000, 1000000], # 2000000],
-            'bunches': [36, 36, 72], #72],
-            'slices': [1000],
+            'particles': [3000000], # 2000000],
+            'bunches': [18, 36, 72, 144, 288], #72],
+            'slices': [1408],
             'turns': [10000],
             'monitor': [0],
             'seed': [0],
@@ -167,23 +513,23 @@ slurm:
             'approx': [0],
             'log': [1],
             'loadbalance': ['reportonly,,,,'],
-            'gpu': ['0'],
+            'gpu': [0],
             'artificialdelay': ['off'],
             'precision': ['double'],
             'timing': ['timing'],
-            'workers': [2, 4, 8], #16],
+            'workers': [2, 4, 8, 16, 32], #16],
             'omp': [10],
             'mpi': ['openmpi4'],
             'time': [60],
-            'repeats': 4
+            'repeats': 2
         },
 
 
         'approx0-weak-scaling': {
             'exe': ['SPS_main.py'],
-            'particles': [500000, 1000000, 1000000], # 2000000],
-            'bunches': [36, 36, 72], #72],
-            'slices': [1000],
+            'particles': [3000000], # 2000000],
+            'bunches': [18, 36, 72, 144, 288], #72],
+            'slices': [1408],
             'turns': [10000],
             'monitor': [0],
             'seed': [0],
@@ -193,23 +539,23 @@ slurm:
             'approx': [0],
             'log': [1],
             'loadbalance': ['reportonly,,,,'],
-            'gpu': ['0'],
+            'gpu': [0],
             'artificialdelay': ['off'],
             'precision': ['double'],
             'timing': ['timing'],
-            'workers': [2, 4, 8], #16],
+            'workers': [2, 4, 8, 16, 32], #16],
             'omp': [10],
             'mpi': ['openmpi4'],
             'time': [60],
-            'repeats': 4
+            'repeats': 2
         },
 
         # GPU only experiments
-        'approx0-weak-scaling-gpu': {
+        'approx0-weak-scaling-gpu-1pn': {
             'exe': ['SPS_main.py'],
-            'particles': [500000, 1000000, 1000000], # 2000000],
-            'bunches': [36, 36, 72], #72],
-            'slices': [1000],
+            'particles': [3000000], # 2000000],
+            'bunches': [18, 36, 72, 144, 288], #72],
+            'slices': [1408],
             'turns': [10000],
             'monitor': [0],
             'seed': [0],
@@ -219,18 +565,96 @@ slurm:
             'approx': [0],
             'log': [1],
             'loadbalance': ['reportonly,,,,'],
-            'gpu': [1, 1, 1, 2, 2, 2],
+            'gpu': [1],
             'artificialdelay': ['off'],
             'precision': ['double'],
             'timing': ['timing'],
-            'workers': [1, 2, 4, 2, 4, 8], #16],
-            'omp': [20, 20, 20, 10, 10, 10],
+            'workers': [1, 2, 4, 8, 16], #16],
+            'omp': [20],
             'mpi': ['openmpi4'],
             'time': [60],
-            'repeats': 4
+            'repeats': 2
         },
 
+
+
+        'approx0-weak-scaling-gpu-2pn': {
+            'exe': ['SPS_main.py'],
+            'particles': [6000000], # 2000000],
+            'bunches': [18, 36, 72, 144, 288], #72],
+            'slices': [1408],
+            'turns': [10000],
+            'monitor': [0],
+            'seed': [0],
+            'mtw': [0],
+            'withtp': [0],
+            'reduce': [2],
+            'approx': [0],
+            'log': [1],
+            'loadbalance': ['reportonly,,,,'],
+            'gpu': [2],
+            'artificialdelay': ['off'],
+            'precision': ['double'],
+            'timing': ['timing'],
+            'workers': [2, 4, 8, 16, 32], #16],
+            'omp': [10],
+            'mpi': ['openmpi4'],
+            'time': [60],
+            'repeats': 2
+        },
        
+
+        'approx0-strong-scaling-gpu-1pn': {
+            'exe': ['SPS_main.py'],
+            'particles': [3000000], # 2000000],
+            'bunches': [288], #72],
+            'slices': [1408],
+            'turns': [10000],
+            'monitor': [0],
+            'seed': [0],
+            'mtw': [0],
+            'withtp': [0],
+            'reduce': [2],
+            'approx': [0],
+            'log': [1],
+            'loadbalance': ['reportonly,,,,'],
+            'gpu': [1],
+            'artificialdelay': ['off'],
+            'precision': ['double'],
+            'timing': ['timing'],
+            'workers': [1, 2, 4, 8, 16], #16],
+            'omp': [20],
+            'mpi': ['openmpi4'],
+            'time': [90],
+            'repeats': 2
+        },
+
+
+
+        'approx0-strong-scaling-gpu-2pn': {
+            'exe': ['SPS_main.py'],
+            'particles': [6000000], # 2000000],
+            'bunches': [288], #72],
+            'slices': [1408],
+            'turns': [10000],
+            'monitor': [0],
+            'seed': [0],
+            'mtw': [0],
+            'withtp': [0],
+            'reduce': [2],
+            'approx': [0],
+            'log': [1],
+            'loadbalance': ['reportonly,,,,'],
+            'gpu': [2],
+            'artificialdelay': ['off'],
+            'precision': ['double'],
+            'timing': ['timing'],
+            'workers': [2, 4, 8, 16, 32], #16],
+            'omp': [10],
+            'mpi': ['openmpi4'],
+            'time': [90],
+            'repeats': 2
+        },       
 
         # CPU-GPU experiments
         # Weak scaling
@@ -238,7 +662,7 @@ slurm:
             'exe': ['SPS_main.py'],
             'particles': [500000, 1000000, 1000000], # 2000000],
             'bunches': [36, 36, 72], #72],
-            'slices': [1000],
+            'slices': [1408],
             'turns': [10000],
             'monitor': [0],
             'seed': [0],
@@ -263,7 +687,7 @@ slurm:
             'exe': ['SPS_main.py'],
             'particles': [500000, 1000000, 1000000], # 2000000],
             'bunches': [36, 36, 72], #72],
-            'slices': [1000],
+            'slices': [1408],
             'turns': [10000],
             'monitor': [0],
             'seed': [0],
@@ -287,7 +711,7 @@ slurm:
             'exe': ['SPS_main.py'],
             'particles': [500000, 1000000, 1000000], # 2000000],
             'bunches': [36, 36, 72], #72],
-            'slices': [1000],
+            'slices': [1408],
             'turns': [10000],
             'monitor': [0],
             'seed': [0],
@@ -313,7 +737,7 @@ slurm:
             'exe': ['SPS_main.py'],
             'particles': [500000, 1000000, 1000000], # 2000000],
             'bunches': [36, 36, 72], #72],
-            'slices': [1000],
+            'slices': [1408],
             'turns': [10000],
             'monitor': [0],
             'seed': [0],

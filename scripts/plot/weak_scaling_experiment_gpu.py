@@ -19,15 +19,16 @@ parser.add_argument('-i', '--inputdir', type=str, default=os.path.join(project_d
 parser.add_argument('-c', '--cases', type=str, default='lhc,sps,ps',
                     help='A comma separated list of the testcases to run. Default: lhc,sps,ps')
 
-parser.add_argument('-s', '--show', action='store_true',
-                    help='Show the plots.')
-parser.add_argument('-e', '--errorbars', action='store_true',
-                    help='Add errorbars.')
-
 parser.add_argument('-o', '--outdir', type=str, default=None,
                     help='The directory to store the plots.'
                     'Default: In a plots directory inside the input results directory.')
 
+
+
+parser.add_argument('-s', '--show', action='store_true',
+                    help='Show the plots.')
+parser.add_argument('-e', '--errorbars', action='store_true',
+                    help='Add errorbars.')
 
 
 args = parser.parse_args()
@@ -49,14 +50,14 @@ gconfig = {
         '2': 'RDS',
     },
     'label': {
-        'double-exact-gpu0': 'base',
-        'single-exact-gpu0': 'f32',
-        'single-SRP-2-gpu0': 'f32-SRP-2',
-        'single-SRP-3-gpu0': 'f32-SRP-3',
-        'single-RDS-gpu0': 'f32-RDS',
-        'double-SRP-2-gpu0': 'f64-SRP-2',
-        'double-SRP-3-gpu0': 'f64-SRP-3',
-        'double-RDS-gpu0': 'f64-RDS',
+        'double-exact-gpu1': 'base',
+        'single-exact-gpu1': 'f32',
+        'single-SRP-2-gpu1': 'f32-SRP-2',
+        'single-SRP-3-gpu1': 'f32-SRP-3',
+        'single-RDS-gpu1': 'f32-RDS',
+        'double-SRP-2-gpu1': 'f64-SRP-2',
+        'double-SRP-3-gpu1': 'f64-SRP-3',
+        'double-RDS-gpu1': 'f64-RDS',
     },
     # 'hatches': ['', '', 'xx', '', 'xx', '', 'xx', '', 'xx'],
     'colors': {
@@ -79,6 +80,8 @@ gconfig = {
         'f32-RDS': '^',
         'f64-RDS': 'x',
     },
+    # 'colors': ['0.1', '0.3', '0.3', '0.5', '0.5', '0.7', '0.7', '0.95', '0.95'],
+    # 'markers': ['x', 'o', '^'],
     'x_name': 'n',
     # 'x_to_keep': [4, 8, 16, 32, 64],
     'omp_name': 'omp',
@@ -121,17 +124,19 @@ gconfig = {
     'fontname': 'DejaVu Sans Mono',
 
     'ylim': [0.4, 1.05],
+    # 'ylim2': [0, 110],
+    # 'yticks2': [0, 20, 40, 60, 80, 100],
     'yticks': [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
     'outfiles': ['{}/{}-{}.png'],
     'files': [
-        '{}/{}/exact-timing-cpu/comm-comp-report.csv',
-        '{}/{}/rds-timing-cpu/comm-comp-report.csv',
-        '{}/{}/srp-timing-cpu/comm-comp-report.csv',
-        '{}/{}/float32-timing-cpu/comm-comp-report.csv',
-        '{}/{}/f32-rds-timing-cpu/comm-comp-report.csv',
-        '{}/{}/f32-srp-timing-cpu/comm-comp-report.csv',
-        # '{}/{}/tp-approx0-weak-scaling/comm-comp-report.csv',
-        # '{}/{}/approx0-weak-scaling/comm-comp-report.csv',
+        # '{}/{}/approx0-weak-scaling-gpu-1pn/comm-comp-report.csv',
+        # '{}/{}/approx0-weak-scaling-gpu-2pn/comm-comp-report.csv',
+        '{}/{}/exact-timing-gpu/comm-comp-report.csv',
+        '{}/{}/rds-timing-gpu/comm-comp-report.csv',
+        '{}/{}/srp-timing-gpu/comm-comp-report.csv',
+        '{}/{}/float32-timing-gpu/comm-comp-report.csv',
+        '{}/{}/f32-rds-timing-gpu/comm-comp-report.csv',
+        '{}/{}/f32-srp-timing-gpu/comm-comp-report.csv',
         # '{}/{}/lb-tp-approx2-weak-scaling/comm-comp-report.csv',
         # '{}/{}/lb-tp-approx1-weak-scaling/comm-comp-report.csv',
     ],
@@ -157,6 +162,11 @@ plt.rcParams['text.usetex'] = True  # Let TeX do the typsetting
 plt.rcParams['text.latex.preamble'] = [r'\usepackage{sansmath}', r'\sansmath']
 plt.rcParams['font.family'] = 'sans-serif'  # ... for regular text
 plt.rcParams['font.sans-serif'] = 'Helvetica'
+# 'Helvetica, Avant Garde, Computer Modern Sans serif' # Choose a nice font here
+
+
+# plt.rcParams['font.family'] = gconfig['fontname']
+# plt.rcParams['text.usetex'] = True
 
 
 if __name__ == '__main__':

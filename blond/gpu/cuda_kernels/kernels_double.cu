@@ -221,20 +221,30 @@ __global__ void simple_kick(
 }
 
 extern "C"
-__global__ void rf_volt_comp(  double *voltage,
-                               double *omega_rf,
-                               double *phi_rf,
-                               double *bin_centers,
-                               int n_rf,
-                               int n_bins,
-                               int f_rf,
-                               double *rf_voltage)
+__global__ void rf_volt_comp(double *voltage,
+                             double *omega_rf,
+                             double *phi_rf,
+                             double *bin_centers,
+                             int n_rf,
+                             int n_bins,
+                             int f_rf,
+                             double *rf_voltage)
 {
     int tid = threadIdx.x + blockDim.x * blockIdx.x;
-    
+    extern __shared__ double s[];
+    if (threadIdx.x == 0){
+        for (int j = 0; j < n_rf; j++) {
+            s[j] = voltage[j];
+            s[j + n_rf] = omega_rf[j];
+            s[j + 2 * n_rf] = phi_rf[j];
+        }
+    }
+
+    __syncthreads();
     for (int i = tid; i < n_bins; i += blockDim.x * gridDim.x) {
         for (int j = 0; j < n_rf; j++)
-            rf_voltage[i] = voltage[j] * sin(omega_rf[j] * bin_centers[i] + phi_rf[j]);
+            // rf_voltage[i] = voltage[j] * sin(omega_rf[j] * bin_centers[i] + phi_rf[j]);
+            rf_voltage[i] = s[j] * sin(s[j+n_rf] * bin_centers[i] + s[j+2*n_rf]);
     }
 }
 
@@ -1492,6 +1502,22 @@ __global__ void d_multscalar(double *a, double *b, double c, long n)
     for (i = cta_start + tid; i < n; i += total_threads)
     {
         a[i] = c * b[i];
+    }
+    ;
+}
+
+
+extern "C"
+__global__ void d_mul_int_by_scalar(int *a, double c, long n)
+{
+    unsigned tid = threadIdx.x;
+    unsigned total_threads = gridDim.x * blockDim.x;
+    unsigned cta_start = blockDim.x * blockIdx.x;
+    unsigned i;
+    ;
+    for (i = cta_start + tid; i < n; i += total_threads)
+    {
+        a[i] *= c;
     }
     ;
 }

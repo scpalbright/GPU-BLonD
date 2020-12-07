@@ -94,6 +94,24 @@ parser.add_argument('-u', '--update', action='store_true',
 parser.add_argument('-d', '--delta', action='store_true',
                     help='Calculate the worker times deltas too.')
 
+parser.add_argument('-check', '--check-std', type=int, default=1,
+                    help='Check the STD of the extracted reports and flag configs with too high variation.'
+                    'default: 1 (run the check)')
+
+parser.add_argument('-check-std-func', '--check-std-func', nargs='+', default=['total_time'],
+                    help='Functions to check for their std. A list of strings.')
+
+parser.add_argument('-check-std-cutoff', '--check-std-cutoff', type=float, default=0.1,
+                    help='Lowest value to trigger the STD report.')
+
+parser.add_argument('-check-std-file', '--check-std-file', type=str, default=None,
+                    help='File to save the reports, by default print to the std.')
+
+parser.add_argument('-save-prob-files', '--save-prob-files', type=int, default=1,
+                    help='Save files that had issues in an output file')
+
+args = parser.parse_args()
+
 
 def generate_reports(input, report_script):
     print('\n--------Generating reports-------\n')
@@ -125,14 +143,15 @@ def generate_reports(input, report_script):
             p.wait()
 
 
-def write_avg(files, outfile, outfile_std):
+def write_avg(files, outfile, outfile_std, check_std=False):
     acc_data = []
     default_header = []
     data_dic = {}
     for f in files:
         data = np.genfromtxt(f, dtype=str, delimiter='\t', )
         if len(data) <= 1 or len(data.shape) == 1:
-            print('Empty file: ', indir+'/'+f)
+            print('Empty file: ', f)
+            problem_files.add(os.path.dirname(f))
             continue
 
         header, data = data[0], data[1:]
@@ -141,7 +160,8 @@ def write_avg(files, outfile, outfile_std):
         if len(default_header) == 0:
             default_header = header
         elif not np.array_equal(default_header, header):
-            print('Problem with file: ', indir+'/'+f)
+            print('Problem with file: ', f)
+            problem_files.add(os.path.dirname(f))
             continue
 
         for i, f in enumerate(funcs):
@@ -159,8 +179,23 @@ def write_avg(files, outfile, outfile_std):
     for f, v in data_dic.items():
         data_dic[f] = np.array(v)[sortid][:args.keep]
         acc_data.append([f] + list(np.around(np.mean(data_dic[f], axis=0), 2)))
+        # The std is normalized to the mean.
         acc_data_std.append(
-            [f] + list(np.around(np.std(data_dic[f], axis=0), 2)))
+            [f] + list(np.around(np.abs(np.std(data_dic[f], axis=0) /
+                                        np.mean(data_dic[f], axis=0)), 2))
+        )
+
+    if check_std:
+        if len(files) == 1:
+            print('\n[{}] WARNING: Only one input file!.\n'.format(
+                os.path.dirname(files[0])), file=args.check_std_file)
+        else:
+            for line in acc_data_std:
+                if line[0] in args.check_std_func and np.float(line[1]) > args.check_std_cutoff:
+                    print('\n[{}] WARNING: STD is {}.\n'.format(
+                        os.path.dirname(os.path.commonprefix(
+                            (files[0], files[1]))),
+                        np.float(line[1])), file=args.check_std_file)
 
     writer1 = csv.writer(outfile, delimiter='\t')
     writer1.writerows(acc_data)
@@ -227,7 +262,9 @@ def collect_reports(input, outfile, filename):
             data = np.genfromtxt(os.path.join(dirs, filename),
                                  dtype=str, delimiter='\t')
             if len(data) == 0:
+                problem_files.add(dirs)
                 print('Problem collecting data directory: ', dirs)
+
                 continue
             data_head, data = data[0], data[1:]
             for r in data:
@@ -235,6 +272,7 @@ def collect_reports(input, outfile, filename):
                                 mtw, seed, approx, prec, mpiv, lb, tp,
                                 artdel, gpu] + list(r))
         except:
+            problem_files.add(dirs)
             print('[Error] dir ', dirs)
             continue
     try:
@@ -252,11 +290,17 @@ def collect_reports(input, outfile, filename):
         print(e)
         return -1
 
+problem_files = set()
 
 if __name__ == '__main__':
-    args = parser.parse_args()
 
     indirs = glob.glob(args.indir)
+
+    if args.check_std != 0:
+        if args.check_std_file is None:
+            args.check_std_file = sys.stdout
+        else:
+            args.check_std_file = open(args.check_std_file, 'w')
 
     for indir in indirs:
         print('\n------Extracting {} -------'.format(indir))
@@ -271,28 +315,42 @@ if __name__ == '__main__':
             elif args.outfile == 'file':
                 errorcode = 0
                 errorcode = errorcode or collect_reports(indir,
-                                open(os.path.join(indir, avg_std_report), 'w'),
-                                average_std_fname)
+                                                         open(os.path.join(
+                                                             indir, avg_std_report), 'w'),
+                                                         average_std_fname)
                 errorcode = errorcode or collect_reports(indir,
-                                open(os.path.join(indir, avg_report), 'w'),
-                                average_fname)
+                                                         open(os.path.join(
+                                                             indir, avg_report), 'w'),
+                                                         average_fname)
                 errorcode = errorcode or collect_reports(indir,
-                                open(os.path.join(indir, avg_std_avg_report), 'w'),
-                                average_std_avg_fname)
+                                                         open(os.path.join(
+                                                             indir, avg_std_avg_report), 'w'),
+                                                         average_std_avg_fname)
                 errorcode = errorcode or collect_reports(indir,
-                                open(os.path.join(indir, comm_comp_report), 'w'),
-                                comm_comp_fname)
+                                                         open(os.path.join(
+                                                             indir, comm_comp_report), 'w'),
+                                                         comm_comp_fname)
                 errorcode = errorcode or collect_reports(indir,
-                                open(os.path.join(indir, comm_comp_std_report), 'w'),
-                                comm_comp_std_fname)
+                                                         open(os.path.join(
+                                                             indir, comm_comp_std_report), 'w'),
+                                                         comm_comp_std_fname)
                 # For plot_all.py
                 if errorcode == 0:
                     open(os.path.join(indir, '.extracted'), 'a').close()
-                    
+
                 if args.delta:
                     collect_reports(indir,
-                                    open(os.path.join(indir, delta_std_report), 'w'),
+                                    open(os.path.join(
+                                        indir, delta_std_report), 'w'),
                                     delta_std_fname)
                     collect_reports(indir,
                                     open(os.path.join(indir, delta_report), 'w'),
                                     delta_average_fname)
+
+    if args.save_prob_files:
+        with open('extract-error-files.txt', 'a') as f:
+            for line in problem_files:
+                f.write(line)
+                f.write('\n')
+
+    args.check_std_file.close()
